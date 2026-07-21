@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz de Umbanda - Templo de Iemanjá</title>
+  <style>
+    :root {
+      --bg: #f5f7f5;
+      --card-bg: #ffffff;
+      --primary: #2e7d32;     /* verde */
+      --primary-soft: #e0f2f1;
+      --accent: #c9a34f;      /* dourado */
+      --text: #1f1f1f;
+      --muted: #666666;
+      --error: #c62828;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #ffffff 0, #f5f7f5 40%, #e8efe8 100%);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px 16px 32px;
+    }
+
+    header {
+      text-align: center;
+      padding: 16px 12px 8px;
+    }
+
+    .logo {
+      width: 160px;
+      max-width: 60vw;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      margin: 6px 0 8px;
+      object-fit: cover;
+    }
+
+    .title {
+      margin: 4px 0 0;
+      font-size: clamp(1.7rem, 3vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .quiz-card {
+      margin-top: 18px;
+      padding: 18px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow:
+        0 16px 32px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(0, 0, 0, 0.02);
+      backdrop-filter: blur(4px);
+    }
+
+    .question {
+      padding: 14px 12px 16px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #ffffff, #fafafa);
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      margin-bottom: 14px;
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .question-title {
+      font-weight: 600;
+      font-size: 0.98rem;
+    }
+
+    .question-index {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .options {
+      display: grid;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .option {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 9px;
+      border-radius: 999px;
+      background: #f7f9f7;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.9rem;
+    }
+
+    .option:hover {
+      background: #eef5ee;
+    }
+
+    .option input[type="radio"] {
+      accent-color: var(--primary);
+      transform: scale(1.05);
+      cursor: pointer;
+    }
+
+    .option.correct {
+      background: #e6f4ea;
+      border-color: #2e7d3244;
+    }
+
+    .option.incorrect {
+      background: #ffebee;
+      border-color: #c6282844;
+    }
+
+    .option-label {
+      flex: 1;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.1);
+    }
+
+    .progress {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 9px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #1b5e20);
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(46, 125, 50, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 9px 18px rgba(46, 125, 50, 0.45);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 10px rgba(46, 125, 50, 0.35);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--primary);
+      border: 1px solid rgba(46, 125, 50, 0.25);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .btn-secondary:hover {
+      background: #f3f8f3;
+    }
+
+    .result {
+      margin-top: 16px;
+      padding: 14px 12px;
+      border-radius: 10px;
+      border-left: 4px solid var(--accent);
+      background: linear-gradient(120deg, #fff8e1, #fffde7);
+      font-size: 0.92rem;
+    }
+
+    .result strong {
+      color: var(--primary);
+    }
+
+    .error-message {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--error);
+    }
+
+    footer {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 600px) {
+      .quiz-card {
+        padding: 14px 10px;
+      }
+      .question {
+        padding: 10px 9px 12px;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn {
+        justify-content: center;
+        width: 100%;
+      }
+      header {
+        padding-top: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h2 style="margin:0; font-size:1rem; letter-spacing:0.12em; text-transform:uppercase; color:#555;">
+        TEMPLO DE IEMANJÁ
+      </h2>
+      <p style="margin:2px 0 8px; font-size:0.85rem; color:#777;">
+        FUNDADO EM 2025
+      </p>
+
+      <!-- Imagem online de Iemanjá em desenho -->
+      <img
+        src="https://img.magnific.com/vetores-gratis/ilustracao-plana-de-iemanja_52683-155442.jpg?semt=ais_hybrid&w=740&q=80"
+        alt="Ilustração de Iemanjá"
+        class="logo"
+      >
+
+      <h1 class="title">Quiz de Umbanda</h1>
+      <p class="subtitle">
+        Responda às questões de múltipla escolha baseadas no curso e veja o seu resultado no final.
+      </p>
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span>Treino para o curso</span>
+      </div>
+    </header>
+
+    <section class="quiz-card">
+      <form id="quiz-form"></form>
+
+      <div class="controls">
+        <div class="progress" id="progress-text"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary" id="reset-btn">
+            Limpar respostas
+          </button>
+          <button type="button" class="btn btn-primary" id="submit-btn">
+            Finalizar quiz
+          </button>
+        </div>
+      </div>
+
+      <div id="error-message" class="error-message" style="display:none;"></div>
+      <div id="result" class="result" style="display:none;"></div>
+    </section>
+
+    <footer>
+      Quiz em HTML, CSS e JavaScript — baseado na apostila do Curso de Umbanda do Templo de Iemanjá.
+    </footer>
+  </div>
+
+  <script>
+    // ================================
+    // 1) LISTA DE 50 PERGUNTAS
+    // ================================
+    const questions = [
+      // HISTÓRIA E FUNDAMENTOS
+      {
+        question: "1) Em que ano, de acordo com a tradição, se inicia a história da Umbanda com Zélio Fernandino de Moraes?",
+        options: [
+          "1808",
+          "1888",
+          "1908",
+          "1921"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "2) Em qual cidade ocorreu a famosa sessão em que se manifestou o Caboclo das Sete Encruzilhadas através de Zélio?",
+        options: [
+          "São Paulo (SP)",
+          "Niterói (RJ)",
+          "Salvador (BA)",
+          "Porto Alegre (RS)"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "3) Qual é o nome do espírito que se apresentou dizendo: “Sou o Caboclo das Sete Encruzilhadas, porque para mim não haverá caminhos fechados”?",
+        options: [
+          "Caboclo Pena Branca",
+          "Caboclo das Sete Encruzilhadas",
+          "Caboclo Tupinambá",
+          "Caboclo Ubirajara"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "4) A Umbanda nasce como uma religião que:",
+        options: [
+          "Imita totalmente o espiritismo kardecista, sem diferenças",
+          "Proíbe qualquer forma de mediunidade",
+          "Se dirige principalmente aos humildes, com base na caridade",
+          "Só aceita participantes com formação acadêmica elevada"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "5) De forma geral, pode-se dizer que a Umbanda é sustentada principalmente por quais três pilares?",
+        options: [
+          "Humildade, amor e caridade",
+          "Medo, castigo e obediência cega",
+          "Riqueza, poder e status social",
+          "Críticas, discussões e disputas intelectuais"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "6) Segundo os ensinamentos umbandistas, a morte é vista como:",
+        options: [
+          "O fim definitivo da existência",
+          "Um castigo irreversível",
+          "O grande nivelador universal entre ricos e pobres",
+          "Um momento em que apenas os santos evoluem"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "7) Em relação à visão de Deus na Umbanda, é correto afirmar que:",
+        options: [
+          "Deus é visto como um ser vingativo e limitado",
+          "Deus é único, supremo e manifesta-se através das diversas linhas e Orixás",
+          "Há vários deuses independentes, sem unidade",
+          "Deus não é reconhecido na Umbanda"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "8) A Umbanda surgiu em um contexto de preconceito contra espíritos que se apresentavam como:",
+        options: [
+          "Reis e rainhas europeus",
+          "Pretos escravos e índios",
+          "Somente anjos",
+          "Somente demônios"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "9) O Caboclo das Sete Encruzilhadas afirmou que a religião que se iniciaria:",
+        options: [
+          "Seria reservada apenas a iniciados em magia",
+          "Falaria aos humildes e simbolizaria a igualdade espiritual",
+          "Seria exclusiva para intelectuais kardecistas",
+          "Não aceitaria espíritos de índios"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "10) O trabalho nos terreiros de Umbanda tem como foco principal:",
+        options: [
+          "Apenas adivinhações sobre o futuro",
+          "A prática da caridade espiritual e moral",
+          "Ganhos financeiros com consultas pagas",
+          "Dominar a vontade de outras pessoas"
+        ],
+        correctIndex: 1
+      },
+
+      // ORIXÁS E LINHAS
+      {
+        question: "11) Na Umbanda, o termo Orixá está associado principalmente a:",
+        options: [
+          "Forças da natureza e princípios divinos",
+          "Espíritos sofredores em desenvolvimento",
+          "Somente santos católicos",
+          "Demônios que precisam ser dominados"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "12) Qual das alternativas apresenta apenas nomes de Orixás cultuados na Umbanda?",
+        options: [
+          "Oxalá, Ogum, Oxóssi, Xangô",
+          "Oxalá, Moisés, Abraão, Jacó",
+          "Isis, Osíris, Hórus, Anúbis",
+          "São Pedro, São João, São Paulo, São Lucas"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "13) A relação entre Orixás e entidades (como Caboclos e Pretos Velhos) pode ser entendida assim:",
+        options: [
+          "Os Orixás são forças divinas e as entidades são espíritos que trabalham em suas linhas",
+          "As entidades mandam nos Orixás",
+          "Orixás e entidades são exatamente a mesma coisa",
+          "As entidades não têm relação nenhuma com Orixás"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "14) Na Umbanda, Oxalá é geralmente associado a:",
+        options: [
+          "Justiça e pedreiras",
+          "Linha das águas doces",
+          "Paz, fé e energia maior",
+          "Domínio sobre cemitérios"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "15) Ogum, na tradição umbandista, está mais ligado a qual aspecto?",
+        options: [
+          "Guerra, caminhos e demandas",
+          "Mares e oceanos profundos",
+          "Velhice e sabedoria ancestral",
+          "Somente aos assuntos financeiros"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "16) Oxóssi é reconhecido na Umbanda principalmente como Orixá:",
+        options: [
+          "Da mata, da fartura e da caça",
+          "Dos raios e trovões",
+          "Dos cemitérios e calungas",
+          "Exclusivo das encruzilhadas"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "17) Xangô é tradicionalmente associado a:",
+        options: [
+          "Justiça, pedreiras e equilíbrio",
+          "Domínio exclusivo sobre o fogo do inferno",
+          "Somente ao mundo das crianças",
+          "Apenas trabalhos de amor"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "18) Iemanjá é vista, dentro da Umbanda, como Orixá ligada:",
+        options: [
+          "Aos ventos e tempestades",
+          "Às matas fechadas",
+          "Ao mar, à maternidade e proteção",
+          "Aos cemitérios e almas"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "19) Pretos Velhos, Caboclos e Crianças são exemplos de:",
+        options: [
+          "Linhas de trabalho e falanges de entidades que se manifestam",
+          "Nomes de Orixás masculinos",
+          "Nomes de santos católicos",
+          "Somente arquétipos psicológicos, sem mediunidade"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "20) Os Exus de trabalho na Umbanda, quando bem compreendidos, são:",
+        options: [
+          "Demônios que fazem o mal por prazer",
+          "Guardas, mensageiros e trabalhadores na Lei, quando firmados na luz",
+          "Somente espíritos infantis",
+          "Apenas espíritos de padres católicos"
+        ],
+        correctIndex: 1
+      },
+
+      // ENTIDADES E LINHAS DE TRABALHO
+      {
+        question: "21) Os Pretos Velhos se manifestam, em geral, com qual característica principal?",
+        options: [
+          "Postura de anjos crianças, muito alegres e brincalhões",
+          "Postura sábia, humilde, pacienciosa, como antigos escravos",
+          "Aparência de guerreiros indígenas jovens",
+          "Postura agressiva e violenta"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "22) Crianças (Erês) na Umbanda costumam trabalhar trazendo:",
+        options: [
+          "Brutalidade e imposição de medo",
+          "Força pesada e vingativa",
+          "Alegria, leveza e pureza espiritual",
+          "Apenas processos de julgamento e condenação"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "23) A linha de Marinheiros está associada a entidades que:",
+        options: [
+          "Trabalham ligadas ao mar, navegação e equilíbrio emocional",
+          "Atuam somente em cemitérios",
+          "São responsáveis apenas por curas físicas",
+          "Não têm qualquer relação com águas"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "24) Boiadeiros, em suas manifestações, costumam trazer a vibração de:",
+        options: [
+          "Domínio, firmeza, direção e proteção de rebanhos (simbolicamente almas)",
+          "Infantilidade e ingenuidade",
+          "Desordem e confusão mental",
+          "Somente conhecimento intelectual"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "25) Caboclos, de maneira geral, representam espíritos ligados a:",
+        options: [
+          "Antigos guerreiros indígenas e forças da natureza",
+          "Somente monges europeus",
+          "Apenas espíritos de crianças",
+          "Exclusivamente magos do Oriente"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "26) A manifestação de uma entidade em terra, na Umbanda, tem por finalidade principal:",
+        options: [
+          "Entreter o público com danças",
+          "Trazer orientação, cura, aconselhamento e equilíbrio",
+          "Demonstrar poder para impressionar",
+          "Distribuir castigos físicos"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "27) Quando uma entidade se identifica com um nome (por exemplo, Vovó Maria, Caboclo X), isso significa que:",
+        options: [
+          "É sempre a mesma alma em todas as casas",
+          "É um nome de trabalho, representando uma falange espiritual",
+          "É apenas um apelido inventado pelo médium",
+          "Nunca tem relação com sua história espiritual"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "28) Em relação a Exu na Umbanda, é correto afirmar que:",
+        options: [
+          "É apenas um diabo cristão",
+          "Não pode trabalhar para o bem nunca",
+          "Quando bem doutrinado, trabalha na Lei, na guarda e na proteção",
+          "Só trabalha para vingança"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "29) As Pombagiras na Umbanda são entidades que:",
+        options: [
+          "Representam a energia feminina, atuando em questões emocionais e de caminho",
+          "São apenas espíritos de crianças",
+          "São exclusivamente dedicadas a fazer o mal",
+          "Não trabalham em nenhum tipo de demanda"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "30) A forma simples e direta com que as entidades falam na Umbanda tem como objetivo:",
+        options: [
+          "Humilhar intelectuais",
+          "Alcançar o coração das pessoas simples, sem complicações",
+          "Impedir qualquer tipo de estudo",
+          "Substituir totalmente a leitura da apostila"
+        ],
+        correctIndex: 1
+      },
+
+      // TERREIRO, RITUAIS E ELEMENTOS
+      {
+        question: "31) O terreiro de Umbanda é, basicamente:",
+        options: [
+          "Um espaço físico e espiritual consagrado ao trabalho com as entidades",
+          "Um salão de festas comum",
+          "Apenas uma sala de estudo teórico",
+          "Um local usado somente para reuniões sociais"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "32) O congá (ou altar) em um terreiro de Umbanda tem a função de:",
+        options: [
+          "Apenas decorar o ambiente",
+          "Servir de ponto de firmeza, irradiação e conexão com Orixás e guias",
+          "Guardar objetos pessoais dos médiuns",
+          "Substituir completamente a fé do praticante"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "33) Os atabaques e cânticos (pontos cantados) na Umbanda servem principalmente para:",
+        options: [
+          "Animar a festa social",
+          "Apenas marcar o tempo da música",
+          "Chamar, firmar e sustentar a vibração dos Orixás e entidades",
+          "Confundir os médiuns"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "34) A defumação, normalmente com ervas, é utilizada para:",
+        options: [
+          "Perfumar o ambiente apenas",
+          "Afastar miasmas, energias negativas e harmonizar o campo espiritual",
+          "Enfeitar o congá com fumaça",
+          "Substituir o banho higiênico"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "35) A tronqueira, quando existe no terreiro, está ligada principalmente:",
+        options: [
+          "A guarda da casa, associada a Exu de Lei",
+          "Ao descanso dos médiuns",
+          "A um depósito de materiais de limpeza",
+          "A um local de recreação"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "36) Uma gira de Umbanda pode ser compreendida como:",
+        options: [
+          "Qualquer roda de conversa sem propósito",
+          "O trabalho ritualístico onde ocorrem cânticos, toques e incorporações",
+          "Somente o momento de arrumação do terreiro",
+          "Reunião administrativa da diretoria"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "37) Pontos riscados (feitos com pemba) têm a função de:",
+        options: [
+          "Fazer desenhos decorativos no chão",
+          "Apenas entreter as pessoas curiosas",
+          "Marcar, firmar e ancorar energias e entidades específicas",
+          "Substituir o estudo doutrinário"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "38) Os banhos de ervas indicados na Umbanda são utilizados para:",
+        options: [
+          "Causar doenças físicas",
+          "Equilibrar o campo energético, descarregar ou atrair boas vibrações",
+          "Substituir a alimentação diária",
+          "Trazer apenas sorte em jogos de azar"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "39) A oferenda, quando orientada corretamente por entidade ou Orixá, é compreendida como:",
+        options: [
+          "Um pagamento para comprar favores",
+          "Um sacrifício sem sentido",
+          "Um ato simbólico de doação, troca e agradecimento energético",
+          "Algo proibido em qualquer situação"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "40) O dirigente espiritual (Pai ou Mãe de Santo) tem como principal responsabilidade:",
+        options: [
+          "Acumular poder pessoal",
+          "Decidir sozinho sobre a vida dos filhos de santo",
+          "Conduzir, orientar, zelar pela disciplina e pela linha da casa",
+          "Proibir qualquer estudo sobre Umbanda"
+        ],
+        correctIndex: 2
+      },
+
+      // MEDIUNIDADE, PRECEITOS E ÉTICA
+      {
+        question: "41) Mediunidade, na Umbanda, pode ser entendida como:",
+        options: [
+          "Uma doença mental sem cura",
+          "Uma faculdade natural de intermediação entre o plano espiritual e o material",
+          "Um dom reservado a poucas pessoas especiais",
+          "Um tipo de castigo imposto por Deus"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "42) O médium é visto, nos trabalhos de Umbanda, como:",
+        options: [
+          "Um instrumento de trabalho a serviço da espiritualidade superior",
+          "Um guru infalível que sabe tudo",
+          "Alguém que deve ser adorado pelos consulentes",
+          "Um vendedor de milagres"
+        ],
+        correctIndex: 0
+      },
+      {
+        question: "43) Um dos cuidados básicos com a mediunidade, muito enfatizado na apostila, é:",
+        options: [
+          "Usar a mediunidade para ganhar dinheiro",
+          "Utilizar a mediunidade para manipular a vontade de terceiros",
+          "Zelar pela moral, disciplina, estudo e humildade",
+          "Evitar qualquer contato com estudo e doutrina"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "44) Quanto aos preceitos (resguardos) antes de um trabalho de Umbanda, é correto afirmar que incluem, em geral:",
+        options: [
+          "Exagero de bebidas alcoólicas antes da gira",
+          "Afastamento de vícios, preparo mental, oração e cuidados pessoais",
+          "Discussões e brigas intensas antes do trabalho",
+          "Competição para ver quem incorpora mais"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "45) Em relação ao atendimento aos consulentes, a Umbanda orienta que:",
+        options: [
+          "Se façam promessas que não podem ser cumpridas",
+          "Se julguem as pessoas com dureza e sem amor",
+          "Sejam oferecidas, dentro da ética, orientação, consolo e esclarecimento",
+          "Se cobre caro por cada conselho espiritual"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "46) Sobre o uso da mediunidade para fins pessoais egoístas, a visão umbandista é que:",
+        options: [
+          "É aceitável, desde que traga resultados rápidos",
+          "É perigoso, causa desequilíbrios e é contrário à Lei",
+          "É a principal finalidade da religião",
+          "Não gera nenhuma consequência espiritual"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "47) A disciplina dentro do terreiro, de acordo com os ensinamentos da apostila, serve para:",
+        options: [
+          "Controlar as pessoas por autoritarismo",
+          "Garantir ordem, respeito, segurança espiritual e bom andamento dos trabalhos",
+          "Favorecer apenas o dirigente",
+          "Impedir qualquer manifestação mediúnica"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "48) O estudo teórico da Umbanda, aliado à prática na gira, é importante porque:",
+        options: [
+          "Substitui completamente a fé",
+          "Evita que o médium compreenda o que está fazendo",
+          "Dá base, entendimento e segurança ao trabalho mediúnico",
+          "É apenas um enfeite, sem valor real"
+        ],
+        correctIndex: 2
+      },
+      {
+        question: "49) Em relação a críticas e preconceitos contra a Umbanda, a postura recomendada é:",
+        options: [
+          "Responder com violência física",
+          "Respeitar, esclarecer com calma quando possível e manter a firmeza na fé",
+          "Abandonar imediatamente a religião",
+          "Ofender todas as outras crenças"
+        ],
+        correctIndex: 1
+      },
+      {
+        question: "50) Ao final, o objetivo maior da Umbanda, conforme a apostila, é:",
+        options: [
+          "Acumular bens materiais para o terreiro",
+          "Apenas resolver problemas imediatos",
+          "Contribuir para a evolução espiritual, pela prática da caridade e do amor",
+          "Dominar outras religiões"
+        ],
+        correctIndex: 2
+      }
+    ];
+
+    // ================================
+    // 2) GERAÇÃO DINÂMICA DO QUIZ
+    // ================================
+    const quizForm = document.getElementById("quiz-form");
+    const progressText = document.getElementById("progress-text");
+    const resultDiv = document.getElementById("result");
+    const errorMessageDiv = document.getElementById("error-message");
+    const submitBtn = document.getElementById("submit-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    function renderQuestions() {
+      quizForm.innerHTML = "";
+      questions.forEach((q, qIndex) => {
+        const questionWrapper = document.createElement("div");
+        questionWrapper.className = "question";
+        questionWrapper.dataset.questionIndex = qIndex;
+
+        const header = document.createElement("div");
+        header.className = "question-header";
+
+        const title = document.createElement("div");
+        title.className = "question-title";
+        title.textContent = q.question;
+
+        const indexLabel = document.createElement("div");
+        indexLabel.className = "question-index";
+        indexLabel.textContent = `Questão ${qIndex + 1} de ${questions.length}`;
+
+        header.appendChild(title);
+        header.appendChild(indexLabel);
+
+        const optionsDiv = document.createElement("div");
+        optionsDiv.className = "options";
+
+        q.options.forEach((optText, optIndex) => {
+          const optionId = `q${qIndex}_opt${optIndex}`;
+          const label = document.createElement("label");
+          label.className = "option";
+          label.setAttribute("for", optionId);
+
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${qIndex}`;
+          input.id = optionId;
+          input.value = optIndex;
+
+          const span = document.createElement("span");
+          span.className = "option-label";
+          span.textContent = optText;
+
+          label.appendChild(input);
+          label.appendChild(span);
+          optionsDiv.appendChild(label);
+        });
+
+        questionWrapper.appendChild(header);
+        questionWrapper.appendChild(optionsDiv);
+        quizForm.appendChild(questionWrapper);
+      });
+
+      updateProgress();
+      clearResult();
+    }
+
+    function updateProgress() {
+      const total = questions.length;
+      let answered = 0;
+
+      questions.forEach((_, qIndex) => {
+        const selected = quizForm.querySelector(`input[name="q${qIndex}"]:checked`);
+        if (selected) answered++;
+      });
+
+      progressText.textContent = `Respondidas: ${answered}/${total}`;
+    }
+
+    function clearHighlighting() {
+      const optionLabels = quizForm.querySelectorAll(".option");
+      optionLabels.forEach(label => {
+        label.classList.remove("correct", "incorrect");
+      });
+    }
+
+    function clearResult() {
+      resultDiv.style.display = "none";
+      resultDiv.textContent = "";
+      errorMessageDiv.style.display = "none";
+      errorMessageDiv.textContent = "";
+      clearHighlighting();
+    }
+
+    function handleSubmit() {
+      const total = questions.length;
+      let correctCount = 0;
+      let unanswered = 0;
+
+      clearHighlighting();
+
+      questions.forEach((q, qIndex) => {
+        const selected = quizForm.querySelector(`input[name="q${qIndex}"]:checked`);
+        const questionBlock = quizForm.querySelector(
+          `.question[data-question-index="${qIndex}"]`
+        );
+        const optionLabels = questionBlock.querySelectorAll(".option");
+
+        if (!selected) {
+          unanswered++;
+          return;
+        }
+
+        const chosenIndex = Number(selected.value);
+
+        optionLabels.forEach((label, optIndex) => {
+          if (optIndex === q.correctIndex) {
+            label.classList.add("correct");
+          }
+          if (optIndex === chosenIndex && chosenIndex !== q.correctIndex) {
+            label.classList.add("incorrect");
+          }
+        });
+
+        if (chosenIndex === q.correctIndex) {
+          correctCount++;
+        }
+      });
+
+      if (unanswered > 0) {
+        errorMessageDiv.style.display = "block";
+        errorMessageDiv.textContent =
+          `Você deixou ${unanswered} questão(ões) em branco. ` +
+          `Você pode responder todas ou finalizar assim mesmo.`;
+      } else {
+        errorMessageDiv.style.display = "none";
+        errorMessageDiv.textContent = "";
+      }
+
+      const wrongCount = total - correctCount;
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML =
+        `<strong>Resultado:</strong> Você acertou <strong>${correctCount}</strong> ` +
+        `de <strong>${total}</strong> questões (${wrongCount} errada(s)).`;
+
+      updateProgress();
+    }
+
+    function handleReset() {
+      const inputs = quizForm.querySelectorAll("input[type='radio']");
+      inputs.forEach(input => {
+        input.checked = false;
+      });
+      clearResult();
+      updateProgress();
+    }
+
+    quizForm.addEventListener("change", () => {
+      updateProgress();
+      clearHighlighting();
+    });
+
+    submitBtn.addEventListener("click", handleSubmit);
+    resetBtn.addEventListener("click", handleReset);
+
+    renderQuestions();
+  </script>
+</body>
+</html>
