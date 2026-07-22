@@ -310,6 +310,14 @@
                 <option value="d">D</option>
               </select>
             </div>
+            <div class="field">
+              <label for="field-tema">Tema (opcional)</label>
+              <input
+                type="text"
+                id="field-tema"
+                placeholder="Ex: Exu, Orixás, Entidades, Semana 1..."
+              />
+            </div>
           </div>
 
           <div class="input-row">
@@ -342,6 +350,7 @@
           <thead>
             <tr>
               <th>Nº</th>
+              <th>Tema</th>
               <th>Pergunta</th>
               <th>Alternativas</th>
               <th>Correta</th>
@@ -398,6 +407,7 @@
     const fieldC = document.getElementById("field-c");
     const fieldD = document.getElementById("field-d");
     const fieldCorreta = document.getElementById("field-correta");
+    const fieldTema = document.getElementById("field-tema");
     const fieldAtivo = document.getElementById("field-ativo");
     const formMessage = document.getElementById("form-message");
     const formSuccess = document.getElementById("form-success");
@@ -451,6 +461,7 @@
       fieldC.value = "";
       fieldD.value = "";
       fieldCorreta.value = "a";
+      fieldTema.value = "";
       fieldAtivo.checked = true;
       formMessage.style.display = "none";
       formSuccess.style.display = "none";
@@ -459,7 +470,7 @@
     btnNova.addEventListener("click", limparFormulario);
 
     async function carregarPerguntas() {
-      tableBody.innerHTML = "<tr><td colspan='6'>Carregando...</td></tr>";
+      tableBody.innerHTML = "<tr><td colspan='7'>Carregando...</td></tr>";
       listaVazia.style.display = "none";
       try {
         const snapshot = await getDocs(collection(db, "perguntas"));
@@ -484,6 +495,10 @@
           const tdNum = document.createElement("td");
           tdNum.textContent = p.numero || "";
           tr.appendChild(tdNum);
+
+          const tdTema = document.createElement("td");
+          tdTema.textContent = p.tema || "";
+          tr.appendChild(tdTema);
 
           const tdTexto = document.createElement("td");
           const textoCurto =
@@ -531,7 +546,7 @@
       } catch (e) {
         console.error(e);
         tableBody.innerHTML =
-          "<tr><td colspan='6'>Erro ao carregar perguntas.</td></tr>";
+          "<tr><td colspan='7'>Erro ao carregar perguntas.</td></tr>";
       }
     }
 
@@ -546,6 +561,7 @@
       fieldC.value = p.c || "";
       fieldD.value = p.d || "";
       fieldCorreta.value = (p.correta || "a").toLowerCase();
+      fieldTema.value = p.tema || "";
       fieldAtivo.checked = p.ativo !== false;
       formMessage.style.display = "none";
       formSuccess.style.display = "none";
@@ -579,6 +595,7 @@
       const c = fieldC.value.trim();
       const d = fieldD.value.trim();
       const correta = fieldCorreta.value.trim().toLowerCase();
+      const tema = fieldTema.value.trim();
       const ativo = fieldAtivo.checked;
 
       if (!numero || !texto || !a || !b || !c || !d || !correta) {
@@ -588,7 +605,7 @@
         return;
       }
 
-      const dados = { numero, texto, a, b, c, d, correta, ativo };
+      const dados = { numero, texto, a, b, c, d, correta, ativo, tema };
 
       try {
         if (editandoId) {
