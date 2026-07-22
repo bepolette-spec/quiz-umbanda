@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Quiz de Umbanda</title>
+  <style>
+    :root {
+      --bg: #f5f7f5;
+      --card-bg: #ffffff;
+      --primary: #2e7d32;
+      --primary-soft: #e0f2f1;
+      --accent: #c9a34f;
+      --text: #1f1f1f;
+      --muted: #666666;
+      --error: #c62828;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(
+        circle at top,
+        #ffffff 0,
+        #f5f7f5 40%,
+        #e8efe8 100%
+      );
+      color: var(--text);
+    }
+    .app {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 16px 16px 32px;
+    }
+    h1, h2, h3 {
+      margin: 0 0 8px;
+      color: var(--primary);
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(0, 0, 0, 0.03);
+      margin-bottom: 16px;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 3px;
+    }
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #d0d7de;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+    .field {
+      flex: 1;
+      min-width: 120px;
+    }
+    .small-field {
+      max-width: 100px;
+      min-width: 80px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 8px;
+      margin-top: 4px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #1b5e20);
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(46, 125, 50, 0.4);
+    }
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--primary);
+      border: 1px solid rgba(46, 125, 50, 0.25);
+    }
+    .btn-danger {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+    th {
+      text-align: left;
+      background: #f3f8f3;
+    }
+    tr:nth-child(even) td {
+      background: #fafafa;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #eef5ee;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .error-message {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+    .success-message {
+      color: var(--primary);
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+    .login-box {
+      max-width: 360px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    @media (max-width: 700px) {
+      .input-row {
+        flex-direction: column;
+      }
+      .small-field {
+        max-width: 100%;
+      }
+      table {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- TELA DE LOGIN -->
+    <div id="login-section" class="card login-box">
+      <h2>Admin - Quiz de Umbanda</h2>
+      <p class="muted">Digite a senha do administrador para editar as perguntas.</p>
+      <div style="margin-top: 12px;">
+        <label for="admin-password">Senha do administrador</label>
+        <input type="password" id="admin-password" />
+        <button id="login-button" class="btn btn-primary" style="margin-top: 10px;">
+          Entrar
+        </button>
+        <div id="login-error" class="error-message" style="display:none;"></div>
+      </div>
+      <p class="muted" style="margin-top: 12px; font-size: 0.78rem;">
+        Dica: compartilhe esta senha apenas com as pessoas autorizadas a alterar o questionário.
+      </p>
+    </div>
+
+    <!-- ÁREA ADMIN (SÓ APARECE DEPOIS DA SENHA CORRETA) -->
+    <div id="admin-section" style="display:none;">
+      <div class="card">
+        <h1>Administração do Quiz de Umbanda</h1>
+        <p class="muted">
+          Aqui você pode <strong>adicionar, editar e apagar perguntas</strong> sem precisar mexer em código.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>1. Pergunta em edição</h3>
+        <p class="muted">
+          Preencha os campos abaixo e clique em <strong>Salvar pergunta</strong>.
+          Para editar uma já existente, clique em <strong>Editar</strong> na lista.
+        </p>
+        <form id="question-form">
+          <div class="input-row">
+            <div class="field small-field">
+              <label for="field-numero">Número</label>
+              <input type="text" id="field-numero" placeholder="Ex: 1" />
+            </div>
+            <div class="field">
+              <label for="field-texto">Texto da pergunta</label>
+              <textarea id="field-texto" placeholder="Digite aqui a pergunta completa"></textarea>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="field">
+              <label for="field-a">Alternativa A</label>
+              <input type="text" id="field-a" placeholder="Opção A" />
+            </div>
+            <div class="field">
+              <label for="field-b">Alternativa B</label>
+              <input type="text" id="field-b" placeholder="Opção B" />
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="field">
+              <label for="field-c">Alternativa C</label>
+              <input type="text" id="field-c" placeholder="Opção C" />
+            </div>
+            <div class="field">
+              <label for="field-d">Alternativa D</label>
+              <input type="text" id="field-d" placeholder="Opção D" />
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="field small-field">
+              <label for="field-correta">Alternativa correta</label>
+              <select id="field-correta">
+                <option value="a">A</option>
+                <option value="b">B</option>
+                <option value="c">C</option>
+                <option value="d">D</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <button type="submit" class="btn btn-primary">Salvar pergunta</button>
+            <button type="button" id="btn-nova" class="btn btn-secondary">
+              Nova pergunta
+            </button>
+          </div>
+          <div id="form-message" class="error-message" style="display:none;"></div>
+          <div id="form-success" class="success-message" style="display:none;"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>2. Lista de perguntas cadastradas</h3>
+        <p class="muted">
+          Clique em <strong>Editar</strong> para carregar a pergunta no formulário acima,
+          ou em <strong>Apagar</strong> para remover.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Pergunta</th>
+              <th>Alternativas</th>
+              <th>Correta</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="questions-table-body">
+            <!-- preenchido via JavaScript -->
+          </tbody>
+        </table>
+        <p id="lista-vazia" class="muted" style="margin-top:8px; display:none;">
+          Ainda não há perguntas cadastradas.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      doc,
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // SENHA ÚNICA DO ADMIN (PODE MUDAR AQUI)
+    const ADMIN_PASSWORD = "Umbanda2025";
+
+    // MESMA CONFIG DO index.html
+    const firebaseConfig = {
+      apiKey: "AlZaSyBnqTLNyvYTnDhsrz3nbnk0jmHJ0gSORg8",
+      authDomain: "quiz-umbanda-templo-iemanja.firebaseapp.com",
+      projectId: "quiz-umbanda-templo-iemanja",
+      storageBucket: "quiz-umbanda-templo-iemanja.firebasestorage.app",
+      messagingSenderId: "531312912300",
+      appId: "1:531312912300:web:03a58e371b4de53eb33c09",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ELEMENTOS DE TELA
+    const loginSection = document.getElementById("login-section");
+    const adminSection = document.getElementById("admin-section");
+    const passwordInput = document.getElementById("admin-password");
+    const loginButton = document.getElementById("login-button");
+    const loginError = document.getElementById("login-error");
+
+    const form = document.getElementById("question-form");
+    const fieldNumero = document.getElementById("field-numero");
+    const fieldTexto = document.getElementById("field-texto");
+    const fieldA = document.getElementById("field-a");
+    const fieldB = document.getElementById("field-b");
+    const fieldC = document.getElementById("field-c");
+    const fieldD = document.getElementById("field-d");
+    const fieldCorreta = document.getElementById("field-correta");
+    const formMessage = document.getElementById("form-message");
+    const formSuccess = document.getElementById("form-success");
+    const btnNova = document.getElementById("btn-nova");
+
+    const tableBody = document.getElementById("questions-table-body");
+    const listaVazia = document.getElementById("lista-vazia");
+
+    let perguntasCache = [];
+    let editandoId = null;
+
+    function mostrarErroLogin(msg) {
+      loginError.textContent = msg;
+      loginError.style.display = "block";
+    }
+
+    function limparErroLogin() {
+      loginError.textContent = "";
+      loginError.style.display = "none";
+    }
+
+    function autenticar() {
+      const senha = passwordInput.value.trim();
+      if (!senha) {
+        mostrarErroLogin("Digite a senha.");
+        return;
+      }
+      if (senha !== ADMIN_PASSWORD) {
+        mostrarErroLogin("Senha incorreta.");
+        return;
+      }
+      limparErroLogin();
+      loginSection.style.display = "none";
+      adminSection.style.display = "block";
+      carregarPerguntas();
+    }
+
+    loginButton.addEventListener("click", autenticar);
+    passwordInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        autenticar();
+      }
+    });
+
+    function limparFormulario() {
+      editandoId = null;
+      fieldNumero.value = "";
+      fieldTexto.value = "";
+      fieldA.value = "";
+      fieldB.value = "";
+      fieldC.value = "";
+      fieldD.value = "";
+      fieldCorreta.value = "a";
+      formMessage.style.display = "none";
+      formSuccess.style.display = "none";
+    }
+
+    btnNova.addEventListener("click", limparFormulario);
+
+    async function carregarPerguntas() {
+      tableBody.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+      listaVazia.style.display = "none";
+      try {
+        const snapshot = await getDocs(collection(db, "perguntas"));
+        perguntasCache = snapshot.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const na = Number(a.numero || 0);
+            const nb = Number(b.numero || 0);
+            return na - nb;
+          });
+
+        if (perguntasCache.length === 0) {
+          tableBody.innerHTML = "";
+          listaVazia.style.display = "block";
+          return;
+        }
+
+        tableBody.innerHTML = "";
+        perguntasCache.forEach((p) => {
+          const tr = document.createElement("tr");
+
+          const tdNum = document.createElement("td");
+          tdNum.textContent = p.numero || "";
+          tr.appendChild(tdNum);
+
+          const tdTexto = document.createElement("td");
+          const textoCurto =
+            (p.texto || "").length > 80
+              ? (p.texto || "").substring(0, 80) + "..."
+              : p.texto || "";
+          tdTexto.textContent = textoCurto;
+          tr.appendChild(tdTexto);
+
+          const tdAlts = document.createElement("td");
+          tdAlts.innerHTML =
+            `<span class="tag">A: ${(p.a || "").substring(0, 20)}</span>` +
+            `<span class="tag">B: ${(p.b || "").substring(0, 20)}</span>` +
+            `<span class="tag">C: ${(p.c || "").substring(0, 20)}</span>` +
+            `<span class="tag">D: ${(p.d || "").substring(0, 20)}</span>`;
+          tr.appendChild(tdAlts);
+
+          const tdCorreta = document.createElement("td");
+          tdCorreta.textContent = (p.correta || "").toUpperCase();
+          tr.appendChild(tdCorreta);
+
+          const tdAcoes = document.createElement("td");
+          const btnEditar = document.createElement("button");
+          btnEditar.textContent = "Editar";
+          btnEditar.className = "btn btn-secondary";
+          btnEditar.style.padding = "4px 10px";
+          btnEditar.addEventListener("click", () => carregarNoFormulario(p.id));
+
+          const btnApagar = document.createElement("button");
+          btnApagar.textContent = "Apagar";
+          btnApagar.className = "btn btn-danger";
+          btnApagar.style.padding = "4px 10px";
+          btnApagar.addEventListener("click", () => apagarPergunta(p.id));
+
+          tdAcoes.appendChild(btnEditar);
+          tdAcoes.appendChild(btnApagar);
+          tr.appendChild(tdAcoes);
+
+          tableBody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error(e);
+        tableBody.innerHTML =
+          "<tr><td colspan='5'>Erro ao carregar perguntas.</td></tr>";
+      }
+    }
+
+    function carregarNoFormulario(id) {
+      const p = perguntasCache.find((x) => x.id === id);
+      if (!p) return;
+      editandoId = id;
+      fieldNumero.value = p.numero || "";
+      fieldTexto.value = p.texto || "";
+      fieldA.value = p.a || "";
+      fieldB.value = p.b || "";
+      fieldC.value = p.c || "";
+      fieldD.value = p.d || "";
+      fieldCorreta.value = (p.correta || "a").toLowerCase();
+      formMessage.style.display = "none";
+      formSuccess.style.display = "none";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function apagarPergunta(id) {
+      const confirma = confirm("Tem certeza que deseja apagar esta pergunta?");
+      if (!confirma) return;
+      try {
+        await deleteDoc(doc(db, "perguntas", id));
+        carregarPerguntas();
+        if (editandoId === id) {
+          limparFormulario();
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Erro ao apagar pergunta.");
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      formMessage.style.display = "none";
+      formSuccess.style.display = "none";
+
+      const numero = fieldNumero.value.trim();
+      const texto = fieldTexto.value.trim();
+      const a = fieldA.value.trim();
+      const b = fieldB.value.trim();
+      const c = fieldC.value.trim();
+      const d = fieldD.value.trim();
+      const correta = fieldCorreta.value.trim().toLowerCase();
+
+      if (!numero || !texto || !a || !b || !c || !d || !correta) {
+        formMessage.textContent =
+          "Preencha todos os campos antes de salvar.";
+        formMessage.style.display = "block";
+        return;
+      }
+
+      const dados = { numero, texto, a, b, c, d, correta };
+
+      try {
+        if (editandoId) {
+          await updateDoc(doc(db, "perguntas", editandoId), dados);
+          formSuccess.textContent = "Pergunta atualizada com sucesso.";
+        } else {
+          await addDoc(collection(db, "perguntas"), dados);
+          formSuccess.textContent = "Pergunta criada com sucesso.";
+        }
+        formSuccess.style.display = "block";
+        formMessage.style.display = "none";
+        carregarPerguntas();
+      } catch (e) {
+        console.error(e);
+        formMessage.textContent = "Erro ao salvar pergunta.";
+        formMessage.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>
