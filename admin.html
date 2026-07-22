@@ -36,7 +36,6 @@
       padding: 16px 16px 32px;
     }
 
-    /* Cabeçalho igual ao do quiz */
     header {
       text-align: center;
       padding: 16px 12px 8px;
@@ -200,7 +199,6 @@
 </head>
 <body>
   <div class="app">
-    <!-- Cabeçalho comum -->
     <header>
       <h2
         style="
@@ -238,7 +236,6 @@
       </div>
     </header>
 
-    <!-- TELA DE LOGIN -->
     <div id="login-section" class="card login-box">
       <h2>Acesso do administrador</h2>
       <p class="muted">Digite a senha do administrador para editar as perguntas.</p>
@@ -255,7 +252,6 @@
       </p>
     </div>
 
-    <!-- ÁREA ADMIN (SÓ APARECE DEPOIS DA SENHA CORRETA) -->
     <div id="admin-section" style="display:none;">
       <div class="card">
         <h1>Administração do Quiz de Umbanda</h1>
@@ -317,6 +313,15 @@
           </div>
 
           <div class="input-row">
+            <div class="field small-field">
+              <label>
+                <input type="checkbox" id="field-ativo" checked />
+                Ativa no quiz
+              </label>
+            </div>
+          </div>
+
+          <div class="input-row">
             <button type="submit" class="btn btn-primary">Salvar pergunta</button>
             <button type="button" id="btn-nova" class="btn btn-secondary">
               Nova pergunta
@@ -340,12 +345,11 @@
               <th>Pergunta</th>
               <th>Alternativas</th>
               <th>Correta</th>
+              <th>Ativa?</th>
               <th>Ações</th>
             </tr>
           </thead>
-          <tbody id="questions-table-body">
-            <!-- preenchido via JavaScript -->
-          </tbody>
+          <tbody id="questions-table-body"></tbody>
         </table>
         <p id="lista-vazia" class="muted" style="margin-top:8px; display:none;">
           Ainda não há perguntas cadastradas.
@@ -366,10 +370,8 @@
       doc,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // SENHA ÚNICA DO ADMIN (PODE MUDAR AQUI)
     const ADMIN_PASSWORD = "Umbanda2025";
 
-    // MESMA CONFIG DO index.html
     const firebaseConfig = {
       apiKey: "AlZaSyBnqTLNyvYTnDhsrz3nbnk0jmHJ0gSORg8",
       authDomain: "quiz-umbanda-templo-iemanja.firebaseapp.com",
@@ -382,7 +384,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ELEMENTOS DE TELA
     const loginSection = document.getElementById("login-section");
     const adminSection = document.getElementById("admin-section");
     const passwordInput = document.getElementById("admin-password");
@@ -397,6 +398,7 @@
     const fieldC = document.getElementById("field-c");
     const fieldD = document.getElementById("field-d");
     const fieldCorreta = document.getElementById("field-correta");
+    const fieldAtivo = document.getElementById("field-ativo");
     const formMessage = document.getElementById("form-message");
     const formSuccess = document.getElementById("form-success");
     const btnNova = document.getElementById("btn-nova");
@@ -449,6 +451,7 @@
       fieldC.value = "";
       fieldD.value = "";
       fieldCorreta.value = "a";
+      fieldAtivo.checked = true;
       formMessage.style.display = "none";
       formSuccess.style.display = "none";
     }
@@ -456,7 +459,7 @@
     btnNova.addEventListener("click", limparFormulario);
 
     async function carregarPerguntas() {
-      tableBody.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+      tableBody.innerHTML = "<tr><td colspan='6'>Carregando...</td></tr>";
       listaVazia.style.display = "none";
       try {
         const snapshot = await getDocs(collection(db, "perguntas"));
@@ -502,6 +505,10 @@
           tdCorreta.textContent = (p.correta || "").toUpperCase();
           tr.appendChild(tdCorreta);
 
+          const tdAtiva = document.createElement("td");
+          tdAtiva.textContent = p.ativo === false ? "Não" : "Sim";
+          tr.appendChild(tdAtiva);
+
           const tdAcoes = document.createElement("td");
           const btnEditar = document.createElement("button");
           btnEditar.textContent = "Editar";
@@ -524,7 +531,7 @@
       } catch (e) {
         console.error(e);
         tableBody.innerHTML =
-          "<tr><td colspan='5'>Erro ao carregar perguntas.</td></tr>";
+          "<tr><td colspan='6'>Erro ao carregar perguntas.</td></tr>";
       }
     }
 
@@ -539,6 +546,7 @@
       fieldC.value = p.c || "";
       fieldD.value = p.d || "";
       fieldCorreta.value = (p.correta || "a").toLowerCase();
+      fieldAtivo.checked = p.ativo !== false;
       formMessage.style.display = "none";
       formSuccess.style.display = "none";
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -571,6 +579,7 @@
       const c = fieldC.value.trim();
       const d = fieldD.value.trim();
       const correta = fieldCorreta.value.trim().toLowerCase();
+      const ativo = fieldAtivo.checked;
 
       if (!numero || !texto || !a || !b || !c || !d || !correta) {
         formMessage.textContent =
@@ -579,7 +588,7 @@
         return;
       }
 
-      const dados = { numero, texto, a, b, c, d, correta };
+      const dados = { numero, texto, a, b, c, d, correta, ativo };
 
       try {
         if (editandoId) {
