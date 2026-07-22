@@ -35,6 +35,34 @@
       margin: 0 auto;
       padding: 16px 16px 32px;
     }
+
+    /* Cabeçalho igual ao do quiz */
+    header {
+      text-align: center;
+      padding: 16px 12px 8px;
+    }
+    .logo {
+      width: 160px;
+      max-width: 60vw;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      margin: 6px 0 8px;
+      object-fit: cover;
+    }
+    .title {
+      margin: 4px 0 0;
+      font-size: clamp(1.7rem, 3vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
     h1, h2, h3 {
       margin: 0 0 8px;
       color: var(--primary);
@@ -109,6 +137,7 @@
       background: #ffffff;
       color: var(--primary);
       border: 1px solid rgba(46, 125, 50, 0.25);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
     }
     .btn-danger {
       background: #ffebee;
@@ -153,7 +182,7 @@
     }
     .login-box {
       max-width: 360px;
-      margin: 40px auto;
+      margin: 20px auto 40px;
       text-align: center;
     }
     @media (max-width: 700px) {
@@ -171,9 +200,47 @@
 </head>
 <body>
   <div class="app">
+    <!-- Cabeçalho comum -->
+    <header>
+      <h2
+        style="
+          margin: 0;
+          font-size: 1rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #555;
+        "
+      >
+        TEMPLO DE IEMANJÁ
+      </h2>
+      <p style="margin: 2px 0 8px; font-size: 0.85rem; color: #777">
+        FUNDADO EM 2025
+      </p>
+
+      <img
+        src="https://img.magnific.com/vetores-gratis/ilustracao-plana-de-iemanja_52683-155442.jpg?semt=ais_hybrid&w=740&q=80"
+        alt="Ilustração de Iemanjá"
+        class="logo"
+      />
+
+      <h1 class="title">Admin - Quiz de Umbanda</h1>
+      <p class="subtitle">
+        Área restrita para edição das perguntas do quiz.
+      </p>
+      <div style="margin-top: 10px;">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="window.location.href='index.html'"
+        >
+          Voltar para o quiz
+        </button>
+      </div>
+    </header>
+
     <!-- TELA DE LOGIN -->
     <div id="login-section" class="card login-box">
-      <h2>Admin - Quiz de Umbanda</h2>
+      <h2>Acesso do administrador</h2>
       <p class="muted">Digite a senha do administrador para editar as perguntas.</p>
       <div style="margin-top: 12px;">
         <label for="admin-password">Senha do administrador</label>
