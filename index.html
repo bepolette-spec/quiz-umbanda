@@ -135,6 +135,11 @@
       border: 1px solid #d0d7de;
       background: #fff;
     }
+    .timer {
+      font-size: 0.8rem;
+      color: var(--error);
+      font-weight: 600;
+    }
     .question {
       padding: 14px 12px 16px;
       border-radius: 10px;
@@ -355,6 +360,10 @@
             <option value="ativas">Perguntas ativas (padrão)</option>
           </select>
         </div>
+
+        <div class="timer" id="timer-container" style="display:none;">
+          Tempo restante: <span id="timer-display">--:--</span>
+        </div>
       </div>
 
       <form id="quiz-form"></form>
@@ -389,7 +398,7 @@
 
     <footer>
       Quiz em HTML, CSS, JavaScript e Firebase — baseado na apostila do Curso
-      de Umbanda do Templo de Iemanjá, Ministrado por Mãe Rafaela.
+      de Umbanda do Templo de Iemanjá.
       <div style="margin-top: 10px;">
         <button
           type="button"
@@ -408,6 +417,8 @@
       getFirestore,
       collection,
       getDocs,
+      doc,
+      getDoc,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -422,10 +433,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let allQuestions = [];   // todas do Firebase (com tema/ativo)
-    let questions = [];      // perguntas filtradas e embaralhadas que vão para o quiz
-    let currentMode = "prova";  // "prova" ou "estudo"
-    let currentTema = "ativas"; // "ativas" ou nome do tema
+    let allQuestions = [];
+    let questions = [];
+    let currentMode = "prova";
+    let currentTema = "ativas";
+
+    let usarTempo = false;
+    let tempoSegundosConfig = 0;
+    let tempoRestante = 0;
+    let timerInterval = null;
 
     const quizForm = document.getElementById("quiz-form");
     const progressText = document.getElementById("progress-text");
@@ -434,6 +450,8 @@
     const submitBtn = document.getElementById("submit-btn");
     const resetBtn = document.getElementById("reset-btn");
     const retryBtn = document.getElementById("retry-btn");
+    const timerContainer = document.getElementById("timer-container");
+    const timerDisplay = document.getElementById("timer-display");
 
     const btnModeProva = document.getElementById("btn-mode-prova");
     const btnModeEstudo = document.getElementById("btn-mode-estudo");
@@ -453,15 +471,83 @@
       question.correctIndex = opts.findIndex((o) => o.idx === question.correctIndex);
     }
 
-    async function loadQuestionsFromFirebase() {
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerContainer.style.display = "none";
+    }
+
+    function startTimerIfNeeded() {
+      stopTimer();
+      if (!usarTempo || !tempoSegundosConfig || tempoSegundosConfig <= 0) {
+        return;
+      }
+      tempoRestante = tempoSegundosConfig;
+      timerDisplay.textContent = formatTime(tempoRestante);
+      timerContainer.style.display = "block";
+
+      timerInterval = setInterval(() => {
+        tempoRestante--;
+        if (tempoRestante <= 0) {
+          tempoRestante = 0;
+          timerDisplay.textContent = formatTime(tempoRestante);
+          clearInterval(timerInterval);
+          timerInterval = null;
+          bloquearQuizPorTempo();
+        } else {
+          timerDisplay.textContent = formatTime(tempoRestante);
+        }
+      }, 1000);
+    }
+
+    function bloquearQuizPorTempo() {
+      // Bloqueia todos os radios
+      const inputs = quizForm.querySelectorAll("input[type='radio']");
+      inputs.forEach((inp) => {
+        inp.disabled = true;
+      });
+
+      // Desabilita botões principais para não mudar respostas
+      resetBtn.disabled = true;
+      submitBtn.disabled = true;
+
+      // Corrige automaticamente com o que já foi marcado
+      handleSubmit(true); // passando flag de "tempo esgotado"
+
+      errorMessageDiv.style.display = "block";
+      errorMessageDiv.textContent =
+        "Tempo esgotado. O quiz foi corrigido com as respostas que você havia marcado.";
+    }
+
+    async function loadConfigAndQuestions() {
       try {
+        // 1) Lê configuração de tempo
+        const configSnap = await getDoc(doc(db, "config", "geral"));
+        if (configSnap.exists()) {
+          const data = configSnap.data();
+          usarTempo = !!data.usarTempo;
+          tempoSegundosConfig = Number(data.tempoSegundos || 0);
+        } else {
+          usarTempo = false;
+          tempoSegundosConfig = 0;
+        }
+
+        // 2) Lê perguntas
         progressText.textContent = "Carregando perguntas...";
         const snapshot = await getDocs(collection(db, "perguntas"));
 
         const letterToIndex = { a: 0, b: 1, c: 2, d: 3 };
 
-        allQuestions = snapshot.docs.map((doc) => {
-          const data = doc.data() || {};
+        allQuestions = snapshot.docs.map((docu) => {
+          const data = docu.data() || {};
           const numero = Number(data.numero || 0);
           const corretaLetra = String(data.correta || "a").toLowerCase();
           const correctIndex =
@@ -469,10 +555,10 @@
               ? letterToIndex[corretaLetra]
               : 0;
 
-          const ativa = data.ativo !== false; // se não tiver campo, assume ATIVA
+          const ativa = data.ativo !== false;
           const tema = (data.tema || "").trim();
 
-          const q = {
+          return {
             numero,
             question: data.texto || "",
             options: [data.a || "", data.b || "", data.c || "", data.d || ""],
@@ -480,8 +566,6 @@
             ativa,
             tema,
           };
-
-          return q;
         });
 
         buildTemaSelect();
@@ -495,19 +579,15 @@
     }
 
     function buildTemaSelect() {
-      // limpa opções, mantendo a primeira (ativas)
       temaSelect.innerHTML = "";
       const optAtivas = document.createElement("option");
       optAtivas.value = "ativas";
       optAtivas.textContent = "Perguntas ativas (padrão)";
       temaSelect.appendChild(optAtivas);
 
-      // pega lista única de temas não vazios
       const temasSet = new Set();
       allQuestions.forEach((q) => {
-        if (q.tema) {
-          temasSet.add(q.tema);
-        }
+        if (q.tema) temasSet.add(q.tema);
       });
 
       const temas = Array.from(temasSet).sort((a, b) =>
@@ -527,13 +607,12 @@
 
     function prepareQuestionsForCurrentTema() {
       clearResult();
+      stopTimer();
 
       let base;
       if (currentTema === "ativas") {
-        // somente perguntas com ativo = true (ou sem campo ativo)
         base = allQuestions.filter((q) => q.ativa);
       } else {
-        // todas as perguntas do tema (ignora o campo "ativo")
         base = allQuestions.filter(
           (q) => q.tema.toLowerCase() === currentTema.toLowerCase()
         );
@@ -547,7 +626,6 @@
         return;
       }
 
-      // cria cópias, embaralha alternativas e ordem das perguntas
       questions = base.map((q) => ({
         numero: q.numero,
         question: q.question,
@@ -561,6 +639,7 @@
       shuffleArray(questions);
 
       renderQuestions();
+      startTimerIfNeeded();
     }
 
     function renderQuestions() {
@@ -613,6 +692,9 @@
         questionWrapper.appendChild(optionsDiv);
         quizForm.appendChild(questionWrapper);
       });
+
+      resetBtn.disabled = false;
+      submitBtn.disabled = false;
 
       updateProgress();
       clearResult();
@@ -680,7 +762,7 @@
       });
     }
 
-    function handleSubmit() {
+    function handleSubmit(fromTimer = false) {
       if (questions.length === 0) return;
 
       const total = questions.length;
@@ -719,15 +801,17 @@
         }
       });
 
-      if (unanswered > 0) {
-        errorMessageDiv.style.display = "block";
-        errorMessageDiv.textContent =
-          "Você deixou " +
-          unanswered +
-          " questão(ões) em branco. Você pode responder todas ou finalizar assim mesmo.";
-      } else {
-        errorMessageDiv.style.display = "none";
-        errorMessageDiv.textContent = "";
+      if (!fromTimer) {
+        if (unanswered > 0) {
+          errorMessageDiv.style.display = "block";
+          errorMessageDiv.textContent =
+            "Você deixou " +
+            unanswered +
+            " questão(ões) em branco. Você pode responder todas ou finalizar assim mesmo.";
+        } else {
+          errorMessageDiv.style.display = "none";
+          errorMessageDiv.textContent = "";
+        }
       }
 
       const wrongCount = total - correctCount;
@@ -770,9 +854,8 @@
       updateProgress();
     }
 
-    async function handleRetry() {
+    function handleRetry() {
       clearResult();
-      // Reaplica o filtro atual, re-embaralhando
       prepareQuestionsForCurrentTema();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -790,7 +873,7 @@
       }
     });
 
-    submitBtn.addEventListener("click", handleSubmit);
+    submitBtn.addEventListener("click", () => handleSubmit(false));
     resetBtn.addEventListener("click", handleReset);
     retryBtn.addEventListener("click", handleRetry);
 
@@ -817,7 +900,7 @@
     });
 
     setMode("prova");
-    loadQuestionsFromFirebase();
+    loadConfigAndQuestions();
   </script>
 </body>
 </html>
