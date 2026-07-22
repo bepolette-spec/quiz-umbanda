@@ -299,7 +299,7 @@
 
     <footer>
       Quiz em HTML, CSS, JavaScript e Firebase — baseado na apostila do Curso
-      de Umbanda do Templo de Iemanjá, Ministrado por Mãe Rafaela.
+      de Umbanda do Templo de Iemanjá.
       <div style="margin-top: 10px;">
         <button
           type="button"
@@ -312,7 +312,6 @@
     </footer>
   </div>
 
-  <!-- SCRIPT PRINCIPAL: BUSCA AS PERGUNTAS NO FIREBASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
@@ -321,7 +320,6 @@
       getDocs,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // CONFIGURAÇÃO DO SEU PROJETO (mesma do admin.html)
     const firebaseConfig = {
       apiKey: "AlZaSyBnqTLNyvYTnDhsrz3nbnk0jmHJ0gSORg8",
       authDomain: "quiz-umbanda-templo-iemanja.firebaseapp.com",
@@ -360,18 +358,24 @@
                 ? letterToIndex[corretaLetra]
                 : 0;
 
+            // se não tiver campo "ativo", assume que está ATIVA
+            const ativa = data.ativo !== false;
+
             return {
               numero,
               question: data.texto || "",
               options: [data.a || "", data.b || "", data.c || "", data.d || ""],
               correctIndex,
+              ativa,
             };
           })
+          // usa só perguntas marcadas como ativas
+          .filter((q) => q.ativa)
           .sort((a, b) => a.numero - b.numero);
 
         if (questions.length === 0) {
           quizForm.innerHTML =
-            "<p>Não há perguntas cadastradas ainda. Fale com o administrador.</p>";
+            "<p>Não há perguntas ativas neste momento. Fale com o administrador.</p>";
           progressText.textContent = "0/0 perguntas";
           return;
         }
@@ -402,9 +406,7 @@
 
         const indexLabel = document.createElement("div");
         indexLabel.className = "question-index";
-        indexLabel.textContent = `Questão ${qIndex + 1} de ${
-          questions.length
-        }`;
+        indexLabel.textContent = `Questão ${qIndex + 1} de ${questions.length}`;
 
         header.appendChild(title);
         header.appendChild(indexLabel);
@@ -550,7 +552,6 @@
     submitBtn.addEventListener("click", handleSubmit);
     resetBtn.addEventListener("click", handleReset);
 
-    // Carrega as perguntas do Firestore ao abrir a página
     loadQuestions();
   </script>
 </body>
