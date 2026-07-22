@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Importar 120 Perguntas - Quiz Umbanda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 16px;
+    }
+    .card {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      color: #2e7d32;
+    }
+    p {
+      font-size: 0.9rem;
+      color: #444;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, #2e7d32, #1b5e20);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(46,125,50,0.4);
+      margin-top: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+    }
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #d0d7de;
+      resize: vertical;
+      white-space: pre;
+    }
+    .warn {
+      font-size: 0.8rem;
+      color: #c62828;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Importar 120 Perguntas no Firestore</h1>
+    <p>
+      Esta página vai gravar <strong>120 perguntas</strong> na coleção <code>perguntas</code> do seu Firebase.
+      Use <strong>apenas uma vez</strong>. Depois, use o <code>admin.html</code> para editar, ativar/desativar ou apagar.
+    </p>
+    <p>
+      Antes de clicar no botão, confirme que o projeto e a coleção
+      <code>perguntas</code> são os mesmos usados pelo quiz.
+    </p>
+    <button id="import-btn">Importar perguntas agora</button>
+    <p class="warn">
+      AVISO: se você rodar este importador mais de uma vez, as perguntas serão duplicadas.
+      Depois de importar, remova este arquivo do GitHub.
+    </p>
+    <textarea id="log" readonly></textarea>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // MESMA CONFIG DO SEU PROJETO
+    const firebaseConfig = {
+      apiKey: "AlZaSyBnqTLNyvYTnDhsrz3nbnk0jmHJ0gSORg8",
+      authDomain: "quiz-umbanda-templo-iemanja.firebaseapp.com",
+      projectId: "quiz-umbanda-templo-iemanja",
+      storageBucket: "quiz-umbanda-templo-iemanja.firebasestorage.app",
+      messagingSenderId: "531312912300",
+      appId: "1:531312912300:web:03a58e371b4de53eb33c09",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const logEl = document.getElementById("log");
+    const btn = document.getElementById("import-btn");
+
+    function log(msg) {
+      logEl.value += msg + "\\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // 120 PERGUNTAS PRONTAS
+    // Campos: numero, texto, a, b, c, d, correta, tema, ativo
+    const questions = [
+      // 1-10 Fundamentos / História
+      { numero: "1", tema: "Fundamentos", ativo: true,
+        texto: "A Umbanda, segundo a tradição do Caboclo das Sete Encruzilhadas, nasceu com o objetivo principal de:",
+        a: "Ensinar magia para dominar pessoas",
+        b: "Ser religião apenas para intelectuais",
+        c: "Praticar a caridade espiritual e moral para todos",
+        d: "Substituir todas as outras religiões",
+        correta: "c"
+      },
+      { numero: "2", tema: "História", ativo: true,
+        texto: "Em que ano se manifesta o Caboclo das Sete Encruzilhadas em Zélio Fernandino de Moraes, marcando o surgimento da Umbanda?",
+        a: "1808",
+        b: "1888",
+        c: "1908",
+        d: "1920",
+        correta: "c"
+      },
+      { numero: "3", tema: "História", ativo: true,
+        texto: "Em qual cidade ocorreu a primeira sessão de Umbanda com o Caboclo das Sete Encruzilhadas?",
+        a: "São Paulo (SP)",
+        b: "Salvador (BA)",
+        c: "Niterói (RJ)",
+        d: "Porto Alegre (RS)",
+        correta: "c"
+      },
+      { numero: "4", tema: "Fundamentos", ativo: true,
+        texto: "Quais são os três pilares mais citados na apostila como base da Umbanda?",
+        a: "Força, riqueza e poder",
+        b: "Humildade, amor e caridade",
+        c: "Disciplina, medo e obediência cega",
+        d: "Magia, segredo e punição",
+        correta: "b"
+      },
+      { numero: "5", tema: "Fundamentos", ativo: true,
+        texto: "Na visão umbandista, a morte é entendida principalmente como:",
+        a: "Fim definitivo da existência",
+        b: "Castigo sem retorno",
+        c: "Grande nivelador entre ricos e pobres",
+        d: "Exclusivo descanso dos santos",
+        correta: "c"
+      },
+      { numero: "6", tema: "Fundamentos", ativo: true,
+        texto: "Para a Umbanda, Deus (Zambi) é:",
+        a: "Um deus vingativo e limitado",
+        b: "Vários deuses separados sem unidade",
+        c: "Um único Deus supremo que irradia através das linhas e Orixás",
+        d: "Um espírito evoluído como qualquer outro",
+        correta: "c"
+      },
+      { numero: "7", tema: "História", ativo: true,
+        texto: "Qual o nome do espírito que se apresentou dizendo: \"Sou o Caboclo das Sete Encruzilhadas\"?",
+        a: "Caboclo Tupinambá",
+        b: "Caboclo Pena Branca",
+        c: "Caboclo das Sete Encruzilhadas",
+        d: "Caboclo Ubirajara",
+        correta: "c"
+      },
+      { numero: "8", tema: "Fundamentos", ativo: true,
+        texto: "A Umbanda é descrita na apostila como religião que fala principalmente:",
+        a: "Aos humildes, simbolizando igualdade espiritual",
+        b: "Aos intelectuais, com foco em debates filosóficos",
+        c: "Aos nobres e governantes",
+        d: "Aos magos especializados em alta magia",
+        correta: "a"
+      },
+      { numero: "9", tema: "Fundamentos", ativo: true,
+        texto: "A trilogia carmática da Umbanda, ligada às dores históricas de negros, índios e crianças, está associada principalmente a:",
+        a: "Oxalá, Ogum e Xangô",
+        b: "Pretos Velhos, Caboclos e Erês",
+        c: "Exus, Pombagiras e Ciganos",
+        d: "Iemanjá, Oxum e Iansã",
+        correta: "b"
+      },
+      { numero: "10", tema: "Fundamentos", ativo: true,
+        texto: "A prática essencial da Umbanda, segundo a apostila, é:",
+        a: "Comercializar consultas espirituais",
+        b: "Praticar a caridade em nome de Jesus",
+        c: "Ensinar somente magia ritualística",
+        d: "Dominar a vontade de outras pessoas",
+        correta: "b"
+      },
+
+      // 11-20 Sete Linhas e visão geral de Orixás
+      { numero: "11", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "As Sete Linhas de Umbanda organizam principalmente:",
+        a: "As hierarquias de médiuns na casa",
+        b: "As vibrações dos Orixás e falanges espirituais",
+        c: "Os cargos administrativos do terreiro",
+        d: "Somente os pontos cantados",
+        correta: "b"
+      },
+      { numero: "12", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "Na apostila, quais são as Sete Linhas da Umbanda?",
+        a: "Oxalá, Exu, Pombagira, Pretos Velhos, Caboclos, Crianças, Ciganos",
+        b: "Oxalá, Ogum, Oxóssi, Xangô, Yori, Yorimá, Yemanjá",
+        c: "Ogum, Oxossi, Xangô, Iemanjá, Oxum, Iansã, Obaluaiê",
+        d: "Jesus, Maria, José, Pedro, João, Paulo, Lucas",
+        correta: "b"
+      },
+      { numero: "13", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "Na Umbanda, os Orixás são entendidos principalmente como:",
+        a: "Espíritos sofredores em desenvolvimento",
+        b: "Forças da natureza e princípios divinos",
+        c: "Somente santos católicos com outros nomes",
+        d: "Demônios que precisam ser dominados",
+        correta: "b"
+      },
+      { numero: "14", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "Cada Orixá de Umbanda irradia sua força através de:",
+        a: "Linhas, legiões, falanges e espíritos trabalhadores",
+        b: "Apenas de imagens de gesso",
+        c: "Somente de médiuns dirigentes",
+        d: "Governos e autoridades políticas",
+        correta: "a"
+      },
+      { numero: "15", tema: "Fundamentos", ativo: true,
+        texto: "Segundo a apostila, a Umbanda reúne elementos de quais tradições principais?",
+        a: "Católica, indígena, africana e kardecista",
+        b: "Budista, hindu, islâmica e judaica",
+        c: "Somente africana",
+        d: "Somente espírita kardecista",
+        correta: "a"
+      },
+      { numero: "16", tema: "Fundamentos", ativo: true,
+        texto: "Em relação a outras religiões afro-brasileiras, a Umbanda se destaca por:",
+        a: "Ser totalmente fechada e secreta",
+        b: "Aceitar sincretismo e grande flexibilidade ritual",
+        c: "Proibir qualquer ponto cantado",
+        d: "Não ter contato com guias espirituais",
+        correta: "b"
+      },
+      { numero: "17", tema: "Fundamentos", ativo: true,
+        texto: "O sincretismo religioso na Umbanda surgiu, historicamente, como:",
+        a: "Capricho dos médiuns modernos",
+        b: "Forma de ocultar o culto aos Orixás sob imagens católicas",
+        c: "Influência exclusiva da Europa",
+        d: "Imposição do espiritismo kardecista",
+        correta: "b"
+      },
+      { numero: "18", tema: "Fundamentos", ativo: true,
+        texto: "Qual das opções mais se aproxima da definição de Umbanda dada na apostila?",
+        a: "Magia negra urbana",
+        b: "Magia branca, manifestação do espírito para a caridade",
+        c: "Ritual apenas indígena",
+        d: "Somente um culto de mortos",
+        correta: "b"
+      },
+      { numero: "19", tema: "Fundamentos", ativo: true,
+        texto: "Quanto ao pagamento material pelos atendimentos na Umbanda, a apostila ensina que:",
+        a: "É obrigatório cobrar para valorizar o trabalho",
+        b: "Deve-se cobrar apenas dos mais ricos",
+        c: "O atendimento deve ser caritativo e gratuito",
+        d: "O valor é fixado em tabela da casa",
+        correta: "c"
+      },
+      { numero: "20", tema: "Fundamentos", ativo: true,
+        texto: "A relação entre Umbanda e Candomblé, segundo o estudo da apostila, é de:",
+        a: "Inimizade obrigatória",
+        b: "Origem comum africana com caminhos rituais diferentes",
+        c: "Total oposição teológica",
+        d: "Submissão da Umbanda ao Candomblé",
+        correta: "b"
+      },
+
+      // 21-30 Oxalá, Iemanjá, Nanã, Oxum
+      { numero: "21", tema: "Oxalá", ativo: true,
+        texto: "Oxalá, na Umbanda, está principalmente ligado à vibração de:",
+        a: "Força guerreira e luta",
+        b: "Justiça e pedreiras",
+        c: "Paz, fé e criação",
+        d: "Cemitérios e almas",
+        correta: "c"
+      },
+      { numero: "22", tema: "Oxalá", ativo: true,
+        texto: "Qual é a principal saudação a Oxalá na tradição umbandista citada na apostila?",
+        a: "Laroyê Exu",
+        b: "Okê Arô",
+        c: "Epa Babá",
+        d: "Atotô",
+        correta: "c"
+      },
+      { numero: "23", tema: "Oxalá", ativo: true,
+        texto: "Na cozinha ritualística, um alimento clássico ofertado a Oxalá é:",
+        a: "Caruru com muito dendê",
+        b: "Canjica branca (acaçá) sem sal e sem sangue",
+        c: "Moqueca de peixe com pimenta forte",
+        d: "Feijoada completa",
+        correta: "b"
+      },
+      { numero: "24", tema: "Iemanjá", ativo: true,
+        texto: "Iemanjá é vista, dentro da Umbanda, principalmente como Orixá ligada:",
+        a: "Aos ventos e tempestades",
+        b: "Às matas fechadas",
+        c: "Ao mar, à maternidade e proteção",
+        d: "Aos cemitérios e almas",
+        correta: "c"
+      },
+      { numero: "25", tema: "Iemanjá", ativo: true,
+        texto: "Segundo a apostila, qual é um dos dias de grande comemoração a Iemanjá no Brasil?",
+        a: "7 de setembro",
+        b: "2 de fevereiro",
+        c: "31 de outubro",
+        d: "21 de abril",
+        correta: "b"
+      },
+      { numero: "26", tema: "Nanã e Obaluaiê", ativo: true,
+        texto: "Nanã é associada principalmente a qual aspecto da natureza?",
+        a: "Raios e trovões",
+        b: "Terra úmida, lama e memórias ancestrais",
+        c: "Fogo vulcânico",
+        d: "Ventos fortes",
+        correta: "b"
+      },
+      { numero: "27", tema: "Nanã e Obaluaiê", ativo: true,
+        texto: "Segundo a apostila, Nanã está ligada fortemente ao mistério da:",
+        a: "Música e dança",
+        b: "Riqueza material",
+        c: "Vida e morte, início e fim",
+        d: "Tecnologia moderna",
+        correta: "c"
+      },
+      { numero: "28", tema: "Oxum", ativo: true,
+        texto: "Oxum é associada principalmente a:",
+        a: "Águas doces, amor e prosperidade",
+        b: "Ventania e eguns",
+        c: "Relâmpagos e justiça",
+        d: "Pedreiras e montanhas",
+        correta: "a"
+      },
+      { numero: "29", tema: "Oxum", ativo: true,
+        texto: "Um traço muito marcante dos filhos de Oxum, segundo a apostila, é:",
+        a: "Total descuido com aparência",
+        b: "Vaidade, elegância e forte sensibilidade emocional",
+        c: "Frieza emocional absoluta",
+        d: "Aversão ao amor e à família",
+        correta: "b"
+      },
+      { numero: "30", tema: "Oxum", ativo: true,
+        texto: "Na cozinha ritual, uma oferenda típica para Oxum é:",
+        a: "Feijão preto com carne seca",
+        b: "Mingau de milho salgado",
+        c: "Omolocum (feijão fradinho com azeite e camarão)",
+        d: "Farofa de dendê sem nada",
+        correta: "c"
+      },
+
+      // 31-40 Ogum, Oxóssi, Xangô, Iansã
+      { numero: "31", tema: "Ogum", ativo: true,
+        texto: "Ogum é reconhecido na apostila principalmente como Orixá:",
+        a: "Dos mares profundos",
+        b: "Da guerra, caminhos e demandas",
+        c: "Exclusivo das crianças",
+        d: "Apenas dos cemitérios",
+        correta: "b"
+      },
+      { numero: "32", tema: "Ogum", ativo: true,
+        texto: "Um ponto da natureza muito ligado a Ogum é:",
+        a: "Praia deserta",
+        b: "Encruzilhada de terra",
+        c: "Estradas e caminhos",
+        d: "Lagos de água doce",
+        correta: "c"
+      },
+      { numero: "33", tema: "Oxóssi", ativo: true,
+        texto: "Oxóssi representa, sobretudo, o Orixá:",
+        a: "Dos raios e trovões",
+        b: "Da mata, fartura e caça",
+        c: "Dos cemitérios",
+        d: "Do fogo vulcânico",
+        correta: "b"
+      },
+      { numero: "34", tema: "Oxóssi", ativo: true,
+        texto: "O campo de atuação típico de Oxóssi é:",
+        a: "Mar aberto e ondas",
+        b: "Florestas, matas e caçadas",
+        c: "Cemitérios e cruzeiros",
+        d: "Encruzilhadas urbanas",
+        correta: "b"
+      },
+      { numero: "35", tema: "Xangô", ativo: true,
+        texto: "Xangô é tradicionalmente associado a:",
+        a: "Justiça, equilíbrio e pedreiras",
+        b: "Somente ao mundo das crianças",
+        c: "Apenas trabalhos de amor",
+        d: "Caminhos e ruas",
+        correta: "a"
+      },
+      { numero: "36", tema: "Xangô", ativo: true,
+        texto: "O elemento de natureza mais característico de Xangô é:",
+        a: "Mar calmo",
+        b: "Matas fechadas",
+        c: "Pedreiras e pedras",
+        d: "Nuvens altas",
+        correta: "c"
+      },
+      { numero: "37", tema: "Iansã", ativo: true,
+        texto: "Iansã (Oyá), na apostila, é chamada de Orixá dos:",
+        a: "Ventos, tempestades e eguns",
+        b: "Oceanos profundos",
+        c: "Campos de lavoura",
+        d: "Raios de sol calmos",
+        correta: "a"
+      },
+      { numero: "38", tema: "Iansã", ativo: true,
+        texto: "Os filhos de Iansã costumam ser descritos como:",
+        a: "Extremamente calados e introspectivos",
+        b: "Arredios à vida, sem impulso algum",
+        c: "Ativos, impulsivos e apaixonados",
+        d: "Totalmente indiferentes às emoções",
+        correta: "c"
+      },
+      { numero: "39", tema: "Nanã e Obaluaiê", ativo: true,
+        texto: "Obaluaiê (Omulu), segundo a apostila, está fortemente ligado a:",
+        a: "Doenças e curas, continuidade e existência",
+        b: "Apenas aos ventos fortes",
+        c: "Somente às matas",
+        d: "Riqueza financeira imediata",
+        correta: "a"
+      },
+      { numero: "40", tema: "Nanã e Obaluaiê", ativo: true,
+        texto: "A saudação clássica a Obaluaiê/Omulu é:",
+        a: "Laroyê",
+        b: "Saluba",
+        c: "Atotô",
+        d: "Okê Arô",
+        correta: "c"
+      },
+
+      // 41-50 Entidades e linhas
+      { numero: "41", tema: "Pretos Velhos", ativo: true,
+        texto: "Pretos Velhos se manifestam, em geral, com qual característica principal?",
+        a: "Postura de crianças agitadas",
+        b: "Postura sábia, humilde e paciente, como antigos escravos",
+        c: "Aparência de guerreiros indígenas jovens",
+        d: "Postura agressiva e violenta",
+        correta: "b"
+      },
+      { numero: "42", tema: "Erês (Crianças)", ativo: true,
+        texto: "A linha de Erês (Crianças) traz principalmente:",
+        a: "Medo e punição",
+        b: "Energia pesada e vingativa",
+        c: "Alegria, pureza e leveza espiritual",
+        d: "Somente curas físicas",
+        correta: "c"
+      },
+      { numero: "43", tema: "Caboclos e Boiadeiros", ativo: true,
+        texto: "Caboclos, de maneira geral, representam espíritos ligados a:",
+        a: "Antigos guerreiros indígenas e forças da natureza",
+        b: "Somente monges europeus",
+        c: "Apenas crianças desencarnadas",
+        d: "Magos orientais",
+        correta: "a"
+      },
+      { numero: "44", tema: "Caboclos e Boiadeiros", ativo: true,
+        texto: "Boiadeiros simbolizam, sobretudo:",
+        a: "Domínio e direção de rebanhos, protegendo simbolicamente as almas",
+        b: "Infantilidade e ingenuidade",
+        c: "Desordem e confusão mental",
+        d: "Somente conhecimento intelectual",
+        correta: "a"
+      },
+      { numero: "45", tema: "Baianos e Marinheiros", ativo: true,
+        texto: "A linha de Marinheiros está ligada a entidades que trabalham com:",
+        a: "Cemitérios e calungas",
+        b: "Mares, navegação e equilíbrio emocional",
+        c: "Somente pontos riscados",
+        d: "Apenas com crianças",
+        correta: "b"
+      },
+      { numero: "46", tema: "Ciganos", ativo: true,
+        texto: "A linha de Ciganos geralmente trabalha com:",
+        a: "Agricultura e lavoura",
+        b: "Caminhos, intuição, leitura de sorte e liberdade",
+        c: "Somente limpeza pesada de terreiro",
+        d: "Questões exclusivamente jurídicas",
+        correta: "b"
+      },
+      { numero: "47", tema: "Exu e Pomba Gira", ativo: true,
+        texto: "Exus de Lei, quando bem doutrinados, são descritos na apostila como:",
+        a: "Demônios que só fazem o mal",
+        b: "Guardas, mensageiros e trabalhadores na Lei",
+        c: "Somente espíritos infantis",
+        d: "Espíritos sem qualquer função",
+        correta: "b"
+      },
+      { numero: "48", tema: "Exu e Pomba Gira", ativo: true,
+        texto: "Pombagira, na Umbanda, é entendida como:",
+        a: "Qualquer mulher desencarnada",
+        b: "Energia feminina que atua em questões emocionais e de caminho",
+        c: "Demônio feminino que só traz desgraça",
+        d: "Criança desencarnada",
+        correta: "b"
+      },
+      { numero: "49", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "O terreiro de Umbanda é definido como:",
+        a: "Um salão de festas",
+        b: "Apenas sala de estudos",
+        c: "Espaço físico e espiritual consagrado ao trabalho com as entidades",
+        d: "Clube social privado",
+        correta: "c"
+      },
+      { numero: "50", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "O dirigente espiritual (Pai/Mãe de Santo) tem como principal função:",
+        a: "Acumular poder pessoal",
+        b: "Controlar a vida íntima dos filhos de santo",
+        c: "Conduzir, orientar e zelar pela disciplina e pela linha da casa",
+        d: "Apenas cantar pontos",
+        correta: "c"
+      },
+
+      // 51-60 Rituais e elementos
+      { numero: "51", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "Os atabaques e cânticos na Umbanda têm como função principal:",
+        a: "Apenas animar a festa",
+        b: "Marcar o tempo da música",
+        c: "Chamar, firmar e sustentar a vibração dos Orixás e entidades",
+        d: "Confundir os médiuns",
+        correta: "c"
+      },
+      { numero: "52", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "Pontos de chegada e partida são usados para:",
+        a: "Abrir e fechar o terreiro fisicamente",
+        b: "Chamar a entidade para incorporar e despedi-la ao final",
+        c: "Somente alegrar as crianças",
+        d: "Chamar apenas Exus",
+        correta: "b"
+      },
+      { numero: "53", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "A defumação com ervas é utilizada para:",
+        a: "Perfumar o ambiente",
+        b: "Esconder a aparência do terreiro",
+        c: "Afastar miasmas e energias negativas, harmonizando o campo espiritual",
+        d: "Substituir o banho físico",
+        correta: "c"
+      },
+      { numero: "54", tema: "Atabaques e Engoma", ativo: true,
+        texto: "A engoma (conjunto de atabaques) é chamada na apostila de:",
+        a: "Barulho de fundo",
+        b: "Alma musical da gira",
+        c: "Elemento dispensável",
+        d: "Somente enfeite",
+        correta: "b"
+      },
+      { numero: "55", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "Por que não se deve interromper um ponto cantado no meio, sem necessidade?",
+        a: "Porque atrapalha o ogã apenas",
+        b: "Porque é falta de educação musical",
+        c: "Porque mexe com a vibração e firmeza que estão sendo construídas",
+        d: "Porque o atabaque pode quebrar",
+        correta: "c"
+      },
+      { numero: "56", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "Banhos de ervas na Umbanda são usados para:",
+        a: "Causar doenças físicas",
+        b: "Equilibrar o campo energético, descarregar ou atrair boas vibrações",
+        c: "Substituir a alimentação",
+        d: "Trazer sorte em jogos de azar apenas",
+        correta: "b"
+      },
+      { numero: "57", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "A guia (fio de contas) sem ter sido consagrada é considerada:",
+        a: "Objeto perigoso",
+        b: "Objeto neutro, apenas um colar",
+        c: "Amuleto automático de proteção",
+        d: "Proibida em qualquer uso",
+        correta: "b"
+      },
+      { numero: "58", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "A guia de Oxalá, quando consagrada, tem função principalmente de:",
+        a: "Enfeitar o médium",
+        b: "Proteger o médium e ligá-lo à vibração de Oxalá",
+        c: "Mostrar o cargo do médium na casa",
+        d: "Substituir o estudo",
+        correta: "b"
+      },
+      { numero: "59", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "O Amaci é descrito na apostila como:",
+        a: "Jejum de água e alimento",
+        b: "Ritual de banho com ervas consagradas para preparar a cabeça do médium",
+        c: "Reza silenciosa antes da gira",
+        d: "Somente uma oferenda de frutas",
+        correta: "b"
+      },
+      { numero: "60", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "“Bater cabeça” em frente ao congá significa:",
+        a: "Castigo ao médium",
+        b: "Sinal de submissão e respeito da própria cabeça ao poder dos Orixás",
+        c: "Hábito antigo sem sentido",
+        d: "Cumprimento somente para visitantes",
+        correta: "b"
+      },
+
+      // 61-70 Mediunidade e ética
+      { numero: "61", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Mediunidade, na Umbanda, é entendida como:",
+        a: "Doença mental sem cura",
+        b: "Castigo inevitável",
+        c: "Faculdade natural de intermediação entre planos espiritual e material",
+        d: "Dom de poucos privilegiados",
+        correta: "c"
+      },
+      { numero: "62", tema: "Mediunidade e Ética", ativo: true,
+        texto: "O médium, nos trabalhos de Umbanda, é visto principalmente como:",
+        a: "Guru infalível",
+        b: "Instrumento de trabalho a serviço da espiritualidade superior",
+        c: "Pessoa a ser adorada",
+        d: "Vendedor de milagres",
+        correta: "b"
+      },
+      { numero: "63", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Um cuidado básico com a mediunidade, muito enfatizado na apostila, é:",
+        a: "Usar mediunidade para ganhar dinheiro",
+        b: "Manipular a vontade de terceiros",
+        c: "Zelar pela moral, disciplina, estudo e humildade",
+        d: "Evitar qualquer estudo doutrinário",
+        correta: "c"
+      },
+      { numero: "64", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Sobre o uso da mediunidade para fins egoístas, a visão umbandista é que:",
+        a: "É aceitável se trouxer resultados rápidos",
+        b: "É perigoso, causa desequilíbrios e é contrário à Lei",
+        c: "É objetivo principal da religião",
+        d: "Não gera consequências espirituais",
+        correta: "b"
+      },
+      { numero: "65", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Quanto aos preceitos antes de um trabalho de Umbanda, a apostila recomenda:",
+        a: "Beber bastante álcool para soltar a mediunidade",
+        b: "Discutir bastante para gastar energia",
+        c: "Afastar-se de vícios, preparar a mente com oração e cuidar do corpo",
+        d: "Não seguir regra alguma",
+        correta: "c"
+      },
+      { numero: "66", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Em relação ao atendimento aos consulentes, a Umbanda recomenda:",
+        a: "Fazer promessas que não podem ser cumpridas",
+        b: "Julgar as pessoas com dureza",
+        c: "Oferecer orientação, consolo e esclarecimento dentro da ética",
+        d: "Cobrar caro por cada conselho espiritual",
+        correta: "c"
+      },
+      { numero: "67", tema: "Mediunidade e Ética", ativo: true,
+        texto: "A disciplina dentro do terreiro serve, segundo a apostila, para:",
+        a: "Impor poder do dirigente",
+        b: "Garantir ordem, respeito, segurança espiritual e bom andamento dos trabalhos",
+        c: "Impedir manifestação mediúnica",
+        d: "Controlar apenas o horário de entrada",
+        correta: "b"
+      },
+      { numero: "68", tema: "Mediunidade e Ética", ativo: true,
+        texto: "O estudo teórico aliado à prática na gira é importante porque:",
+        a: "Substitui completamente a fé",
+        b: "Dificulta a compreensão do médium",
+        c: "Dá base, entendimento e segurança ao trabalho mediúnico",
+        d: "É apenas enfeite intelectual",
+        correta: "c"
+      },
+      { numero: "69", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Em relação a críticas e preconceitos contra a Umbanda, a postura recomendada é:",
+        a: "Responder com violência",
+        b: "Ofender outras religiões",
+        c: "Manter respeito, esclarecer com calma e firmar na fé",
+        d: "Abandonar a religião",
+        correta: "c"
+      },
+      { numero: "70", tema: "Fundamentos", ativo: true,
+        texto: "O objetivo maior da Umbanda, conforme a apostila, é:",
+        a: "Acumular bens materiais",
+        b: "Dominar outras religiões",
+        c: "Contribuir para evolução espiritual pela caridade e pelo amor",
+        d: "Formar médiuns famosos",
+        correta: "c"
+      },
+
+      // 71-80 Outras religiões afro-brasileiras (Toré, Pajelança, Catimbó, Candomblé)
+      { numero: "71", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "O Toré é descrito na apostila como:",
+        a: "Uma simples dança sem sentido espiritual",
+        b: "Uma dança indígena que inclui práticas religiosas secretas",
+        c: "Um culto apenas católico",
+        d: "Um estilo de música moderna",
+        correta: "b"
+      },
+      { numero: "72", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "Na Pajelança, o pajé utiliza principalmente:",
+        a: "Fumaça de tabaco e maracá para atuar espiritualmente",
+        b: "Somente água benta",
+        c: "Apenas livros de oração",
+        d: "Rituais sem ervas ou fumaça",
+        correta: "a"
+      },
+      { numero: "73", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "No Catimbó de Jurema, os Mestres são descritos como:",
+        a: "Apenas lendas infantis",
+        b: "Espíritos curadores ligados à Jurema e às ervas",
+        c: "Anjos caídos",
+        d: "Somente santos católicos",
+        correta: "b"
+      },
+      { numero: "74", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "O Candomblé, na apostila, aparece como:",
+        a: "Religião africana de culto aos Orixás com sacrifícios animais",
+        b: "Ramificação do espiritismo kardecista",
+        c: "Religião sem música nem dança",
+        d: "Tradição puramente indígena",
+        correta: "a"
+      },
+      { numero: "75", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "O Candomblé de Caboclo mistura elementos de:",
+        a: "Catolicismo e islamismo",
+        b: "Candomblé e Pajelança",
+        c: "Espiritismo e budismo",
+        d: "Umbanda e quimbanda",
+        correta: "b"
+      },
+      { numero: "76", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "Quimbanda, segundo a apostila, está ligada principalmente a:",
+        a: "Culto de Exus em sua linha de esquerda",
+        b: "Apenas culto a crianças",
+        c: "Magia branca exclusivamente",
+        d: "Somente estudo teológico",
+        correta: "a"
+      },
+      { numero: "77", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "Omolocô é descrito como:",
+        a: "Candomblé de influência Angola, Congo e Ketu, próximo da Umbanda",
+        b: "Tradição europeia",
+        c: "Culto somente indígena",
+        d: "Rito sem Orixás",
+        correta: "a"
+      },
+      { numero: "78", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "A Umbanda popular praticada antigamente era muitas vezes chamada de:",
+        a: "Evangelho no lar",
+        b: "Macumba ou Candomblé de Caboclo",
+        c: "Toré de Caboclo",
+        d: "Somente pajelança",
+        correta: "b"
+      },
+      { numero: "79", tema: "Outras Religiões Afro-Brasileiras", ativo: true,
+        texto: "Umbanda de Mesa ou Branca tem forte influência de:",
+        a: "Islamismo",
+        b: "Espiritismo kardecista",
+        c: "Budismo",
+        d: "Xintoísmo",
+        correta: "b"
+      },
+      { numero: "80", tema: "Fundamentos", ativo: true,
+        texto: "O pentagrama umbandista citado na apostila reúne influências de:",
+        a: "Cristianismo, Africanismo, Indianismo, Orientalismo e Kardecismo",
+        b: "Apenas Africanismo",
+        c: "Somente Cristianismo e Kardecismo",
+        d: "Budismo, Judaísmo, Islã e Hinduísmo",
+        correta: "a"
+      },
+
+      // 81-90 Questões mais específicas de Orixás / Elementais
+      { numero: "81", tema: "Orixás e Elementais", ativo: true,
+        texto: "Os Elementais da natureza, na apostila, são descritos como:",
+        a: "Apenas fantasias de literatura",
+        b: "Grandes artífices que atuam nos elementos da natureza",
+        c: "Anjos expulsos do céu",
+        d: "Somente demônios",
+        correta: "b"
+      },
+      { numero: "82", tema: "Orixás e Elementais", ativo: true,
+        texto: "No elemento Terra, a apostila cita como elementais:",
+        a: "Sereias e ondinas",
+        b: "Silfos e salamandras",
+        c: "Gnomos, duendes, dríades e fadas",
+        d: "Anjos guardiões",
+        correta: "c"
+      },
+      { numero: "83", tema: "Orixás e Elementais", ativo: true,
+        texto: "No elemento Água, os elementais mais citados são:",
+        a: "Sereias e ondinas",
+        b: "Gnomos",
+        c: "Silfos",
+        d: "Salamandras",
+        correta: "a"
+      },
+      { numero: "84", tema: "Orixás e Elementais", ativo: true,
+        texto: "No elemento Ar, os elementais chamados silfos estão sob a regência de:",
+        a: "Xangô",
+        b: "Oxalá",
+        c: "Ogum",
+        d: "Exu",
+        correta: "b"
+      },
+      { numero: "85", tema: "Orixás e Elementais", ativo: true,
+        texto: "As salamandras são elementais associados principalmente a:",
+        a: "Fogo",
+        b: "Água",
+        c: "Terra",
+        d: "Ar",
+        correta: "a"
+      },
+      { numero: "86", tema: "Fundamentos", ativo: true,
+        texto: "Segundo a apostila, o Eledá de uma pessoa corresponde a:",
+        a: "Seu Exu de trabalho",
+        b: "Seu Orixá pessoal, chefe de cabeça",
+        c: "Seu Anjo da Guarda católico",
+        d: "Seu signo do zodíaco",
+        correta: "b"
+      },
+      { numero: "87", tema: "Fundamentos", ativo: true,
+        texto: "Ossi e Otum, quando citados junto a Eledá, formam:",
+        a: "Uma trindade cristã",
+        b: "A tríade do coronário do médium na Umbanda",
+        c: "Três Exus de porteira",
+        d: "As sete linhas de Umbanda",
+        correta: "b"
+      },
+      { numero: "88", tema: "Fundamentos", ativo: true,
+        texto: "Sobre incorporação de Orixás Maiores na Umbanda, a apostila ensina que:",
+        a: "Eles incorporam o tempo todo",
+        b: "Podem incorporar em médiuns sem preparo",
+        c: "Não incorporam; quem incorpora são guias e falangeiros",
+        d: "Apenas em crianças",
+        correta: "c"
+      },
+      { numero: "89", tema: "Fundamentos", ativo: true,
+        texto: "Orixás Maiores, na apostila, são descritos como:",
+        a: "Espíritos humanos desencarnados recentemente",
+        b: "Espíritos elevados que nunca encarnaram na Terra e têm função de governo planetário",
+        c: "Apenas santos católicos rebatizados",
+        d: "Somente Exus",
+        correta: "b"
+      },
+      { numero: "90", tema: "Fundamentos", ativo: true,
+        texto: "Sobre o sincretismo entre Orixás e santos católicos, a apostila explica que:",
+        a: "É obrigatório abandonar os Orixás",
+        b: "O sincretismo foi usado para preservar o culto dos Orixás sob perseguição",
+        c: "Não há relação histórica entre eles",
+        d: "A Umbanda rejeita qualquer imagem de santo",
+        correta: "b"
+      },
+
+      // 91-100 Questões mais avançadas (linhas, hierarquia, etc.)
+      { numero: "91", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "A Linha de Oxalá representa, entre as sete linhas, principalmente:",
+        a: "A lei kármica",
+        b: "O princípio, o verbo solar e a fé",
+        c: "As demandas de guerra",
+        d: "As almas dos desencarnados",
+        correta: "b"
+      },
+      { numero: "92", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "A Linha de Yorimá é também conhecida como:",
+        a: "Linha das Almas",
+        b: "Linha das Crianças",
+        c: "Linha de Exu",
+        d: "Linha de Marinheiros",
+        correta: "a"
+      },
+      { numero: "93", tema: "Sete Linhas e Orixás", ativo: true,
+        texto: "A Linha de Yori é composta principalmente por entidades conhecidas como:",
+        a: "Pretos Velhos",
+        b: "Erês (Crianças)",
+        c: "Caboclos",
+        d: "Ciganos",
+        correta: "b"
+      },
+      { numero: "94", tema: "Fundamentos", ativo: true,
+        texto: "Na hierarquia de uma linha, segundo a tabela da apostila, abaixo dos Orixás Menores vem:",
+        a: "Guias (chefes de grupamento) e Protetores",
+        b: "Apenas Exus",
+        c: "Somente médiuns encarnados",
+        d: "Anjos sem função",
+        correta: "a"
+      },
+      { numero: "95", tema: "Fundamentos", ativo: true,
+        texto: "De acordo com a apostila, um mesmo nome de guia (por exemplo, Caboclo Pena Branca) pode representar:",
+        a: "Sempre o mesmo espírito em qualquer casa",
+        b: "Uma falange espiritual de vários espíritos sob o mesmo nome de trabalho",
+        c: "Apenas um Orixá Maior",
+        d: "Somente um médium específico",
+        correta: "b"
+      },
+      { numero: "96", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "Os Ogãs, na apostila, são principalmente responsáveis por:",
+        a: "Dar consultas mediúnicas",
+        b: "Tocar atabaques e sustentar a vibração dos pontos",
+        c: "Cuidar da limpeza física",
+        d: "Controlar a porta de entrada apenas",
+        correta: "b"
+      },
+      { numero: "97", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "As Ekedis são descritas como:",
+        a: "Entidades da linha de Iemanjá",
+        b: "Mulheres que auxiliam Orixás e entidades, vestindo e atendendo durante a gira",
+        c: "Cargos apenas masculinos",
+        d: "Apenas esposas do Pai de Santo",
+        correta: "b"
+      },
+      { numero: "98", tema: "Fundamentos", ativo: true,
+        texto: "O conceito de “bater cabeça” para Pretos Velhos, Caboclos e Orixás está ligado à:",
+        a: "Entrega do orgulho e reconhecimento da lei divina",
+        b: "Pedido de dinheiro",
+        c: "Pedido de vingança",
+        d: "Somente cumprimento social",
+        correta: "a"
+      },
+      { numero: "99", tema: "Fundamentos", ativo: true,
+        texto: "Na apostila, o termo \"Umbanda Branca\" está mais ligado a trabalhos:",
+        a: "Com influência kardecista, com menos uso de elementos materiais",
+        b: "Apenas com Exus de esquerda",
+        c: "Exclusivamente com sacrifícios animais",
+        d: "Sem contato com Orixás",
+        correta: "a"
+      },
+      { numero: "100", tema: "Fundamentos", ativo: true,
+        texto: "Sobre o uso de dinheiro nos terreiros, a apostila reforça que:",
+        a: "A mediunidade não deve ser utilizada como meio de comércio",
+        b: "Só se cobra das pessoas ricas",
+        c: "Todo atendimento é uma prestação de serviço comercial",
+        d: "O guia decide o valor a ser pago",
+        correta: "a"
+      },
+
+      // 101-110 Questões para revisão geral
+      { numero: "101", tema: "Revisão Geral", ativo: true,
+        texto: "Orixá é, na definição da apostila, sobretudo:",
+        a: "Um espírito humano desencarnado",
+        b: "Uma força da natureza personificada",
+        c: "Um santo católico",
+        d: "Um anjo caído",
+        correta: "b"
+      },
+      { numero: "102", tema: "Revisão Geral", ativo: true,
+        texto: "Guias como Caboclos, Pretos Velhos e Erês são:",
+        a: "Orixás Maiores",
+        b: "Espíritos que trabalham nas linhas dos Orixás, manifestando-se em caridade",
+        c: "Somente anjos sem função",
+        d: "Apenas símbolos psicológicos",
+        correta: "b"
+      },
+      { numero: "103", tema: "Revisão Geral", ativo: true,
+        texto: "Segundo a apostila, a diferença básica entre Umbanda e Candomblé está em que:",
+        a: "Umbanda é mais sincrética e voltada à caridade mediúnica",
+        b: "Umbanda é mais rígida e secreta",
+        c: "Candomblé não cultua Orixás",
+        d: "Umbanda rejeita qualquer Orixá",
+        correta: "a"
+      },
+      { numero: "104", tema: "Revisão Geral", ativo: true,
+        texto: "A relação entre fé e estudo na Umbanda é vista como:",
+        a: "Contraditória, devendo escolher apenas um caminho",
+        b: "Complementar: fé com estudo dá segurança à prática",
+        c: "Estudo é desnecessário",
+        d: "Apenas fé emocional, sem reflexão",
+        correta: "b"
+      },
+      { numero: "105", tema: "Revisão Geral", ativo: true,
+        texto: "O “xirê” citado na apostila é:",
+        a: "Nome de guia Exu",
+        b: "Roda de dança/culto em que Orixás e entidades são saudados",
+        c: "Só uma cantiga infantil",
+        d: "Tipo de oferenda de frutas",
+        correta: "b"
+      },
+      { numero: "106", tema: "Revisão Geral", ativo: true,
+        texto: "O uso de bebidas alcoólicas pelos guias (por exemplo, um Preto Velho fumando) é entendido como:",
+        a: "Vício do médium",
+        b: "Simbolismo energético para fixar e limpar miasmas",
+        c: "Apenas falta de disciplina",
+        d: "Obrigatório a todos os médiuns",
+        correta: "b"
+      },
+      { numero: "107", tema: "Revisão Geral", ativo: true,
+        texto: "O conceito de “Umbanda é humildade, amor e caridade” é atribuído, na apostila, a:",
+        a: "Ogum Beira-Mar",
+        b: "Caboclo das Sete Encruzilhadas",
+        c: "Pai Antônio",
+        d: "Exu Tiriri",
+        correta: "b"
+      },
+      { numero: "108", tema: "Revisão Geral", ativo: true,
+        texto: "Sobre Zélio de Moraes, a apostila relata que ele:",
+        a: "Fez da religião sua profissão, vivendo dela",
+        b: "Trabalhava para sustento da família e nunca cobrava pelos atendimentos",
+        c: "Nunca trabalhou mediunicamente",
+        d: "Proibiu qualquer caridade",
+        correta: "b"
+      },
+      { numero: "109", tema: "Revisão Geral", ativo: true,
+        texto: "Os trabalhos de Umbanda, em essência, devem ser realizados em nome de:",
+        a: "Qualquer entidade que se apresente",
+        b: "Somente do dirigente",
+        c: "Jesus e da Lei de Amor",
+        d: "Governos e autoridades civis",
+        correta: "c"
+      },
+      { numero: "110", tema: "Revisão Geral", ativo: true,
+        texto: "O uso de pontos riscados com pemba tem a função de:",
+        a: "Apenas desenhar no chão",
+        b: "Marcar, firmar e ancorar energias e entidades específicas",
+        c: "Substituir o estudo",
+        d: "Somente divertir os presentes",
+        correta: "b"
+      },
+
+      // 111-120 Questões extras sobre temas específicos / prática
+      { numero: "111", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "As giras de Umbanda podem ser classificadas, entre outras formas, como:",
+        a: "Giras de desenvolvimento, atendimento e limpeza",
+        b: "Apenas giras festivas",
+        c: "Somente giras de Exu",
+        d: "Somente giras de Prece",
+        correta: "a"
+      },
+      { numero: "112", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Quando um médium sente que não está bem emocionalmente para trabalhar, a atitude correta é:",
+        a: "Forçar a incorporação a qualquer custo",
+        b: "Avisar o dirigente e, se necessário, apenas ficar na corrente em oração",
+        c: "Abandonar a casa definitivamente",
+        d: "Esconder o que sente",
+        correta: "b"
+      },
+      { numero: "113", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "A defumação de abertura de gira normalmente é feita para:",
+        a: "Expulsar médiuns indesejados",
+        b: "Limpar o ambiente e harmonizar todos os presentes",
+        c: "Queimar oferendas velhas",
+        d: "Apenas perfumar roupas",
+        correta: "b"
+      },
+      { numero: "114", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Sobre o sigilo do que é ouvido em consulta, a postura ética correta é:",
+        a: "Comentar tudo com outros médiuns",
+        b: "Usar as informações para fofoca",
+        c: "Guardar sigilo, respeitando a intimidade do consulente",
+        d: "Publicar nas redes sociais",
+        correta: "c"
+      },
+      { numero: "115", tema: "Fundamentos", ativo: true,
+        texto: "Quando a apostila fala em “caridade moral”, refere-se principalmente a:",
+        a: "Doação apenas de alimentos",
+        b: "Auxílio espiritual, aconselhamento e acolhimento fraterno",
+        c: "Venda de amuletos",
+        d: "Apenas evangelização rígida",
+        correta: "b"
+      },
+      { numero: "116", tema: "Terreiro e Hierarquia", ativo: true,
+        texto: "O congá (altar) em um terreiro de Umbanda tem a função de:",
+        a: "Guardar objetos pessoais dos médiuns",
+        b: "Ser ponto de firmeza, irradiação e conexão com Orixás e guias",
+        c: "Apenas decorar o ambiente",
+        d: "Substituir a fé dos praticantes",
+        correta: "b"
+      },
+      { numero: "117", tema: "Fundamentos", ativo: true,
+        texto: "Na visão da apostila, o preconceito racial e religioso contra a Umbanda deve ser combatido com:",
+        a: "Violência física",
+        b: "Discussões agressivas",
+        c: "Esclarecimento sereno, exemplo e firmeza na fé",
+        d: "Revolta e perseguição",
+        correta: "c"
+      },
+      { numero: "118", tema: "Mediunidade e Ética", ativo: true,
+        texto: "Usar mediunidade para “amarrar” alguém contra sua vontade é considerado:",
+        a: "Trabalho de luz",
+        b: "Experiência pedagógica",
+        c: "Magia negativa, contrária à Lei de Umbanda",
+        d: "Permitido em qualquer caso",
+        correta: "c"
+      },
+      { numero: "119", tema: "Rituais e Pontos Cantados", ativo: true,
+        texto: "O uso correto de velas em Umbanda, segundo a apostila, está mais ligado a:",
+        a: "Oferecer luz e firmeza às entidades e Orixás",
+        b: "Provocar incêndios",
+        c: "Somente enfeitar o congá",
+        d: "Substituir a oração",
+        correta: "a"
+      },
+      { numero: "120", tema: "Fundamentos", ativo: true,
+        texto: "A frase que melhor resume o espírito da Umbanda, conforme a apostila, é:",
+        a: "Umbanda é luxo, poder e status",
+        b: "Umbanda é fé racista e fechada",
+        c: "Umbanda é humildade, amor e caridade",
+        d: "Umbanda é apenas adivinhação",
+        correta: "c"
+      }
+    ];
+
+    async function importQuestions() {
+      if (!confirm("Tem certeza que quer importar as 120 perguntas agora? Não rode duas vezes.")) {
+        return;
+      }
+      btn.disabled = true;
+      log("Iniciando importação de " + questions.length + " perguntas...");
+      let ok = 0;
+      let fail = 0;
+
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        try {
+          await addDoc(collection(db, "perguntas"), q);
+          ok++;
+          log("Pergunta " + q.numero + " importada.");
+        } catch (e) {
+          fail++;
+          log("ERRO ao importar pergunta " + q.numero + ": " + (e && e.message ? e.message : e));
+        }
+      }
+
+      log("");
+      log("Concluído. Sucesso: " + ok + " | Falhas: " + fail + ".");
+      log("Agora você já pode abrir o admin.html, conferir e depois APAGAR este arquivo import-perguntas.html do GitHub.");
+      btn.disabled = false;
+    }
+
+    btn.addEventListener("click", importQuestions);
+  </script>
+</body>
+</html>
