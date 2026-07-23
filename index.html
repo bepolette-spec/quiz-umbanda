@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quiz de Umbanda - Templo de Iemanjá</title>
+
+  <!-- Manifesto PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2e7d32" />
+
   <style>
     :root {
       --bg: #f5f7f5;
@@ -300,6 +305,45 @@
       font-size: 0.75rem;
       color: var(--muted);
     }
+
+    /* Pop-up de instalação PWA */
+    .install-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .install-box {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px 14px;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+      text-align: left;
+    }
+    .install-title {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .install-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 4px 0 10px;
+    }
+    .install-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
     @media (max-width: 600px) {
       .quiz-card {
         padding: 14px 10px;
@@ -329,6 +373,9 @@
         flex-direction: column;
         align-items: flex-start;
       }
+      .install-box {
+        max-width: 90%;
+      }
     }
   </style>
 </head>
@@ -350,9 +397,10 @@
         FUNDADO EM 2025
       </p>
 
+      <!-- Usa a sua Logo Umbanda local -->
       <img
-        src="https://img.magnific.com/vetores-gratis/ilustracao-plana-de-iemanja_52683-155442.jpg?semt=ais_hybrid&w=740&q=80"
-        alt="Ilustração de Iemanjá"
+        src="Logo Umbanda.png"
+        alt="Logo Templo de Iemanjá"
         class="logo"
       />
 
@@ -469,6 +517,28 @@
     </footer>
   </div>
 
+  <!-- Pop-up de instalação do atalho -->
+  <div class="install-overlay" id="install-popup">
+    <div class="install-box">
+      <h3 class="install-title">Adicionar atalho do Quiz?</h3>
+      <p class="install-text">
+        Você pode adicionar um atalho do Quiz de Umbanda na tela inicial do seu
+        celular, tablet ou computador para acessar mais rápido nas próximas aulas.
+      </p>
+      <p class="install-text" style="font-size:0.8rem;">
+        Isso é opcional e depende do seu navegador. Você pode instalar agora ou continuar usando só pelo link.
+      </p>
+      <div class="install-actions">
+        <button type="button" class="btn btn-secondary" onclick="handleInstall('no')">
+          Agora não
+        </button>
+        <button type="button" class="btn btn-primary" onclick="handleInstall('yes')">
+          Sim, adicionar atalho
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
@@ -492,6 +562,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Registra service worker (necessário para PWA)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch((err) => {
+        console.error("Falha ao registrar service worker:", err);
+      });
+    }
+
     let allQuestions = [];
     let questions = [];
     let currentMode = "estudo"; // estudo, treino, prova
@@ -504,7 +581,7 @@
 
     let habilitarProva = false;
     let nomeProvaConfig = "";
-    let inicioProvaTimestamp = null; // Date.now() quando começa a prova oficial
+    let inicioProvaTimestamp = null;
 
     const quizForm = document.getElementById("quiz-form");
     const progressText = document.getElementById("progress-text");
@@ -811,6 +888,7 @@
       errorMessageDiv.style.display = "none";
       errorMessageDiv.textContent = "";
       clearHighlighting();
+      // Em todos os modos, o retry fica escondido até finalizar
       retryBtn.style.display = "none";
     }
 
@@ -857,7 +935,6 @@
     function handleSubmit(fromTimer = false) {
       if (questions.length === 0) return;
 
-      // Para prova oficial, exigir nome (quando não for estouro de tempo)
       if (currentMode === "prova" && !fromTimer) {
         const nome = nomeAlunoInput.value.trim();
         if (!nome) {
@@ -944,10 +1021,17 @@
         "<br><br>" +
         mensagemFinal;
 
-      retryBtn.style.display = "inline-flex";
+      // Em Estudo/Treino pode tentar novamente; em Prova não
+      if (currentMode === "estudo" || currentMode === "treino") {
+        retryBtn.style.display = "inline-flex";
+      } else {
+        retryBtn.style.display = "none";
+        resetBtn.disabled = true;
+        submitBtn.disabled = true;
+      }
+
       updateProgress();
 
-      // Se for prova oficial, grava no ranking
       if (currentMode === "prova") {
         let tempoUsado = 0;
         if (usarTempo && tempoSegundosConfig > 0) {
@@ -986,6 +1070,9 @@
     }
 
     function handleRetry() {
+      if (currentMode === "prova") {
+        return;
+      }
       clearResult();
       prepareQuestionsForCurrentTema();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1028,6 +1115,11 @@
           provaInfo.style.display = "none";
         }
       }
+
+      if (mode === "prova") {
+        retryBtn.style.display = "none";
+      }
+
       clearHighlighting();
       clearResult();
       prepareQuestionsForCurrentTema();
@@ -1048,6 +1140,45 @@
 
     setMode("estudo");
     loadConfigAndQuestions();
+  </script>
+
+  <!-- Script NÃO módulo para lidar com instalação PWA -->
+  <script>
+    let deferredPrompt = null;
+    let installPopupShown = false;
+
+    const isStandalone =
+      window.matchMedia && window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      if (isStandalone) {
+        return; // já está instalado, não precisa pedir atalho
+      }
+
+      e.preventDefault();
+      deferredPrompt = e;
+
+      if (!installPopupShown) {
+        const popup = document.getElementById("install-popup");
+        if (popup) popup.style.display = "flex";
+        installPopupShown = true;
+      }
+    });
+
+    async function handleInstall(choice) {
+      const popup = document.getElementById("install-popup");
+      if (choice === "yes" && deferredPrompt) {
+        deferredPrompt.prompt();
+        try {
+          await deferredPrompt.userChoice;
+        } catch (e) {
+          // ignora erro
+        }
+        deferredPrompt = null;
+      }
+      if (popup) popup.style.display = "none";
+    }
   </script>
 </body>
 </html>
