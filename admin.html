@@ -111,7 +111,7 @@
       min-width: 120px;
     }
     .small-field {
-      max-width: 120px;
+      max-width: 140px;
       min-width: 80px;
     }
     .btn {
@@ -224,7 +224,7 @@
 
       <h1 class="title">Admin - Quiz de Umbanda</h1>
       <p class="subtitle">
-        Área restrita para edição das perguntas do quiz.
+        Área restrita para edição das perguntas e configurações do quiz.
       </p>
       <div style="margin-top: 10px;">
         <button
@@ -239,7 +239,7 @@
 
     <div id="login-section" class="card login-box">
       <h2>Acesso do administrador</h2>
-      <p class="muted">Digite a senha do administrador para editar as perguntas.</p>
+      <p class="muted">Digite a senha do administrador para continuar.</p>
       <div style="margin-top: 12px;">
         <label for="admin-password">Senha do administrador</label>
         <input type="password" id="admin-password" />
@@ -249,25 +249,25 @@
         <div id="login-error" class="error-message" style="display:none;"></div>
       </div>
       <p class="muted" style="margin-top: 12px; font-size: 0.78rem;">
-        Dica: compartilhe esta senha apenas com as pessoas autorizadas a alterar o questionário.
+        Dica: compartilhe esta senha apenas com as pessoas autorizadas a mexer no quiz.
       </p>
     </div>
 
     <div id="admin-section" style="display:none;">
       <div class="card">
-        <h1>Administração do Quiz de Umbanda</h1>
+        <h1>Painel do Quiz de Umbanda</h1>
         <p class="muted">
-          Aqui você pode <strong>configurar o tempo do quiz</strong> e
-          <strong>adicionar, editar e apagar perguntas</strong> sem precisar mexer em código.
+          Aqui você configura o <strong>tempo e a prova oficial</strong>, gerencia as
+          <strong>perguntas</strong> e visualiza o <strong>ranking</strong> dos alunos.
         </p>
       </div>
 
-      <!-- CONFIGURAÇÕES GERAIS -->
+      <!-- 1. CONFIGURAÇÕES GERAIS -->
       <div class="card">
         <h3>1. Configurações gerais</h3>
         <p class="muted">
-          Se ativar o cronômetro, todos os alunos terão o mesmo tempo limite.
-          Quando o tempo acabar, o quiz bloqueia novas respostas e corrige o que já foi marcado.
+          Cronômetro e prova oficial valem para todos que acessarem o link. Use com cuidado
+          só nos momentos em que quiser aplicar prova.
         </p>
         <div class="input-row">
           <div class="field small-field">
@@ -282,6 +282,22 @@
           </div>
         </div>
         <div class="input-row">
+          <div class="field small-field">
+            <label>
+              <input type="checkbox" id="config-habilitar-prova" />
+              Habilitar Prova oficial
+            </label>
+          </div>
+          <div class="field">
+            <label for="config-nome-prova">Nome da prova oficial</label>
+            <input
+              type="text"
+              id="config-nome-prova"
+              placeholder="Ex: Prova Módulo 1 - Orixás"
+            />
+          </div>
+        </div>
+        <div class="input-row">
           <button type="button" id="btn-salvar-config" class="btn btn-primary">
             Salvar configurações
           </button>
@@ -290,7 +306,7 @@
         <div id="config-success" class="success-message" style="display:none;"></div>
       </div>
 
-      <!-- PERGUNTA EM EDIÇÃO -->
+      <!-- 2. PERGUNTA EM EDIÇÃO -->
       <div class="card">
         <h3>2. Pergunta em edição</h3>
         <p class="muted">
@@ -393,7 +409,7 @@
         </form>
       </div>
 
-      <!-- LISTA DE PERGUNTAS -->
+      <!-- 3. LISTA DE PERGUNTAS -->
       <div class="card">
         <h3>3. Lista de perguntas cadastradas</h3>
         <p class="muted">
@@ -416,6 +432,43 @@
         </table>
         <p id="lista-vazia" class="muted" style="margin-top:8px; display:none;">
           Ainda não há perguntas cadastradas.
+        </p>
+      </div>
+
+      <!-- 4. RANKING DE PROVAS -->
+      <div class="card">
+        <h3>4. Ranking de Provas oficiais</h3>
+        <p class="muted">
+          Aqui aparecem apenas os resultados do modo <strong>Prova oficial</strong>.
+          Você pode recarregar ou limpar o ranking sempre que aplicar uma nova prova.
+        </p>
+        <div class="input-row">
+          <button type="button" id="btn-recarregar-ranking" class="btn btn-secondary">
+            Recarregar ranking
+          </button>
+          <button type="button" id="btn-limpar-ranking" class="btn btn-danger">
+            Limpar ranking
+          </button>
+        </div>
+        <div id="ranking-message" class="error-message" style="display:none;"></div>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>Nome</th>
+              <th>Prova</th>
+              <th>Tema</th>
+              <th>Questões</th>
+              <th>Acertos</th>
+              <th>Erros</th>
+              <th>Pontuação</th>
+              <th>Tempo</th>
+            </tr>
+          </thead>
+          <tbody id="ranking-body"></tbody>
+        </table>
+        <p id="ranking-vazio" class="muted" style="margin-top:8px; display:none;">
+          Ainda não há nenhuma prova registrada.
         </p>
       </div>
     </div>
@@ -459,6 +512,8 @@
     // CONFIG GERAL
     const configUsarTempo = document.getElementById("config-usar-tempo");
     const configTempo = document.getElementById("config-tempo");
+    const configHabilitarProva = document.getElementById("config-habilitar-prova");
+    const configNomeProva = document.getElementById("config-nome-prova");
     const btnSalvarConfig = document.getElementById("btn-salvar-config");
     const configMessage = document.getElementById("config-message");
     const configSuccess = document.getElementById("config-success");
@@ -481,6 +536,13 @@
 
     const tableBody = document.getElementById("questions-table-body");
     const listaVazia = document.getElementById("lista-vazia");
+
+    // RANKING
+    const rankingBody = document.getElementById("ranking-body");
+    const rankingVazio = document.getElementById("ranking-vazio");
+    const rankingMessage = document.getElementById("ranking-message");
+    const btnRecarregarRanking = document.getElementById("btn-recarregar-ranking");
+    const btnLimparRanking = document.getElementById("btn-limpar-ranking");
 
     let perguntasCache = [];
     let editandoId = null;
@@ -510,6 +572,7 @@
       adminSection.style.display = "block";
       carregarConfiguracao();
       carregarPerguntas();
+      carregarRanking();
     }
 
     loginButton.addEventListener("click", autenticar);
@@ -526,10 +589,17 @@
         if (snap.exists()) {
           const data = snap.data();
           configUsarTempo.checked = !!data.usarTempo;
-          configTempo.value = data.tempoSegundos != null ? data.tempoSegundos : "";
+          configTempo.value =
+            data.tempoSegundos != null && data.tempoSegundos > 0
+              ? data.tempoSegundos
+              : "";
+          configHabilitarProva.checked = !!data.habilitarProva;
+          configNomeProva.value = data.nomeProva || "";
         } else {
           configUsarTempo.checked = false;
           configTempo.value = "";
+          configHabilitarProva.checked = false;
+          configNomeProva.value = "";
         }
       } catch (e) {
         configMessage.textContent = "Erro ao carregar configurações.";
@@ -543,6 +613,9 @@
 
       const usarTempo = configUsarTempo.checked;
       const tempoStr = configTempo.value.trim();
+      const habilitarProva = configHabilitarProva.checked;
+      const nomeProva = configNomeProva.value.trim();
+
       let tempoSegundos = 0;
 
       if (usarTempo) {
@@ -559,10 +632,18 @@
         }
       }
 
+      if (habilitarProva && !nomeProva) {
+        configMessage.textContent = "Informe um nome para a prova oficial.";
+        configMessage.style.display = "block";
+        return;
+      }
+
       try {
         await setDoc(CONFIG_DOC, {
           usarTempo,
           tempoSegundos: usarTempo ? tempoSegundos : 0,
+          habilitarProva,
+          nomeProva: nomeProva || "",
         });
         configSuccess.textContent = "Configurações salvas com sucesso.";
         configSuccess.style.display = "block";
@@ -745,6 +826,112 @@
         formMessage.style.display = "block";
       }
     });
+
+    // RANKING DE PROVAS
+    function formatTempo(seg) {
+      if (!Number.isFinite(seg) || seg <= 0) return "--:--";
+      const m = Math.floor(seg / 60);
+      const s = seg % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    async function carregarRanking() {
+      rankingMessage.style.display = "none";
+      rankingBody.innerHTML = "<tr><td colspan='9'>Carregando...</td></tr>";
+      rankingVazio.style.display = "none";
+      try {
+        const snap = await getDocs(collection(db, "provas"));
+        const arr = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        if (arr.length === 0) {
+          rankingBody.innerHTML = "";
+          rankingVazio.style.display = "block";
+          return;
+        }
+
+        arr.sort((a, b) => {
+          const pa = Number(a.pontuacao || 0);
+          const pb = Number(b.pontuacao || 0);
+          if (pb !== pa) return pb - pa;
+          const ta = Number(a.tempoSegundos || 0);
+          const tb = Number(b.tempoSegundos || 0);
+          return ta - tb;
+        });
+
+        rankingBody.innerHTML = "";
+        arr.forEach((r, idx) => {
+          const tr = document.createElement("tr");
+
+          const tdPos = document.createElement("td");
+          tdPos.textContent = idx + 1;
+          tr.appendChild(tdPos);
+
+          const tdNome = document.createElement("td");
+          tdNome.textContent = r.nome || "Sem nome";
+          tr.appendChild(tdNome);
+
+          const tdProva = document.createElement("td");
+          tdProva.textContent = r.nomeProva || "";
+          tr.appendChild(tdProva);
+
+          const tdTema = document.createElement("td");
+          tdTema.textContent = r.tema || "";
+          tr.appendChild(tdTema);
+
+          const tdQtd = document.createElement("td");
+          tdQtd.textContent = r.totalQuestoes || 0;
+          tr.appendChild(tdQtd);
+
+          const tdAcertos = document.createElement("td");
+          tdAcertos.textContent = r.acertos || 0;
+          tr.appendChild(tdAcertos);
+
+          const tdErros = document.createElement("td");
+          tdErros.textContent = r.erros || 0;
+          tr.appendChild(tdErros);
+
+          const tdPont = document.createElement("td");
+          const p = Number(r.pontuacao || 0).toFixed(1);
+          tdPont.textContent = p.replace(".", ",");
+          tr.appendChild(tdPont);
+
+          const tdTempo = document.createElement("td");
+          tdTempo.textContent = formatTempo(Number(r.tempoSegundos || 0));
+          tr.appendChild(tdTempo);
+
+          rankingBody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error(e);
+        rankingBody.innerHTML =
+          "<tr><td colspan='9'>Erro ao carregar ranking.</td></tr>";
+      }
+    }
+
+    async function limparRanking() {
+      const confirma = confirm(
+        "Tem certeza que deseja apagar TODOS os resultados de provas?"
+      );
+      if (!confirma) return;
+
+      rankingMessage.style.display = "none";
+      try {
+        const snap = await getDocs(collection(db, "provas"));
+        const promises = snap.docs.map((d) => deleteDoc(doc(db, "provas", d.id)));
+        await Promise.all(promises);
+        rankingBody.innerHTML = "";
+        rankingVazio.style.display = "block";
+        rankingMessage.textContent = "Ranking limpo com sucesso.";
+        rankingMessage.style.display = "block";
+      } catch (e) {
+        console.error(e);
+        rankingMessage.textContent = "Erro ao limpar ranking.";
+        rankingMessage.style.display = "block";
+      }
+    }
+
+    btnRecarregarRanking.addEventListener("click", carregarRanking);
+    btnLimparRanking.addEventListener("click", limparRanking);
   </script>
 </body>
 </html>
