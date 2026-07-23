@@ -224,7 +224,7 @@
 
       <h1 class="title">Admin - Quiz de Umbanda</h1>
       <p class="subtitle">
-        Área restrita para edição das perguntas, configurações e ranking.
+        Área restrita para edição das perguntas, configurações, temas e ranking.
       </p>
       <div style="margin-top: 10px;">
         <button
@@ -258,7 +258,7 @@
         <h1>Painel do Quiz de Umbanda</h1>
         <p class="muted">
           Aqui você configura o <strong>tempo e a prova oficial</strong>, gerencia as
-          <strong>perguntas</strong>, o <strong>ranking</strong> e agora também os
+          <strong>perguntas</strong>, o <strong>ranking</strong> e os
           <strong>temas</strong>.
         </p>
       </div>
@@ -360,7 +360,6 @@
             </div>
             <div class="field">
               <label for="field-tema">Tema (opcional)</label>
-              <!-- opções vêm da coleção "temas" -->
               <select id="field-tema"></select>
             </div>
           </div>
@@ -392,6 +391,16 @@
           Clique em <strong>Editar</strong> para carregar a pergunta no formulário acima,
           ou em <strong>Apagar</strong> para remover.
         </p>
+
+        <div class="input-row">
+          <div class="field small-field">
+            <label for="filtro-tema">Filtrar por tema</label>
+            <select id="filtro-tema">
+              <option value="">(Todos os temas)</option>
+            </select>
+          </div>
+        </div>
+
         <table>
           <thead>
             <tr>
@@ -553,6 +562,8 @@
 
     const tableBody = document.getElementById("questions-table-body");
     const listaVazia = document.getElementById("lista-vazia");
+    const filtroTemaSelect = document.getElementById("filtro-tema");
+    let filtroTema = "";
 
     // RANKING
     const rankingBody = document.getElementById("ranking-body");
@@ -685,7 +696,6 @@
 
     // TEMAS
     function atualizarSelectTemas() {
-      // Limpa e recria o select de temas
       fieldTema.innerHTML = "";
       const optVazio = document.createElement("option");
       optVazio.value = "";
@@ -789,7 +799,6 @@
       );
       try {
         if (existe) {
-          // Se já existir e estiver inativo, apenas reativa
           if (existe.ativo === false) {
             await updateDoc(doc(db, "temas", existe.id), { ativo: true });
             temaSuccess.textContent = "Tema reativado com sucesso.";
@@ -842,7 +851,6 @@
       temaSuccess.style.display = "none";
 
       try {
-        // Verifica se existem perguntas usando esse tema
         const snapPerg = await getDocs(collection(db, "perguntas"));
         const usadas = snapPerg.docs.filter((d) => {
           const data = d.data() || {};
@@ -870,7 +878,47 @@
 
     btnAdicionarTema.addEventListener("click", adicionarTema);
 
-    // FUNÇÕES AUXILIARES
+    // FILTRO DE TEMA NA LISTA DE PERGUNTAS
+    function atualizarFiltroTemasPerguntas() {
+      if (!filtroTemaSelect) return;
+      const previous = filtroTemaSelect.value || "";
+      const temasSet = new Set();
+      perguntasCache.forEach((p) => {
+        const t = (p.tema || "").trim();
+        if (t) temasSet.add(t);
+      });
+
+      const temas = Array.from(temasSet).sort((a, b) =>
+        a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+      );
+
+      filtroTemaSelect.innerHTML = "";
+      const optAll = document.createElement("option");
+      optAll.value = "";
+      optAll.textContent = "(Todos os temas)";
+      filtroTemaSelect.appendChild(optAll);
+
+      temas.forEach((t) => {
+        const opt = document.createElement("option");
+        opt.value = t;
+        opt.textContent = t;
+        filtroTemaSelect.appendChild(opt);
+      });
+
+      if (!previous || temasSet.has(previous)) {
+        filtroTemaSelect.value = previous;
+      } else {
+        filtroTemaSelect.value = "";
+      }
+      filtroTema = filtroTemaSelect.value;
+    }
+
+    filtroTemaSelect.addEventListener("change", () => {
+      filtroTema = filtroTemaSelect.value;
+      carregarPerguntas();
+    });
+
+    // AUXILIAR
     function limparFormulario() {
       editandoId = null;
       fieldNumero.value = "";
@@ -902,14 +950,22 @@
             return na - nb;
           });
 
-        if (perguntasCache.length === 0) {
+        atualizarFiltroTemasPerguntas();
+
+        const listaFiltrada = filtroTema
+          ? perguntasCache.filter(
+              (p) => (p.tema || "").toLowerCase() === filtroTema.toLowerCase()
+            )
+          : perguntasCache;
+
+        if (listaFiltrada.length === 0) {
           tableBody.innerHTML = "";
           listaVazia.style.display = "block";
           return;
         }
 
         tableBody.innerHTML = "";
-        perguntasCache.forEach((p) => {
+        listaFiltrada.forEach((p) => {
           const tr = document.createElement("tr");
 
           const tdNum = document.createElement("td");
@@ -982,7 +1038,6 @@
       fieldD.value = p.d || "";
       fieldCorreta.value = (p.correta || "a").toLowerCase();
 
-      // Garante que o tema antigo aparece, mesmo se estiver desativado ou removido da lista
       const temaPergunta = p.tema || "";
       if (temaPergunta) {
         let existe = false;
@@ -1064,7 +1119,7 @@
       }
     });
 
-    // RANKING DE PROVAS
+    // RANKING
     function formatTempo(seg) {
       if (!Number.isFinite(seg) || seg <= 0) return "--:--";
       const m = Math.floor(seg / 60);
