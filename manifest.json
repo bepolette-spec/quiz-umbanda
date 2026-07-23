@@ -1,0 +1,20 @@
+{
+  "name": "Quiz de Umbanda - Templo de Iemanjá",
+  "short_name": "Quiz Umbanda",
+  "start_url": "/quiz-umbanda/",
+  "display": "standalone",
+  "background_color": "#f5f7f5",
+  "theme_color": "#2e7d32",
+  "icons": [
+    {
+      "src": "Logo Umbanda.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "Logo Umbanda.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
