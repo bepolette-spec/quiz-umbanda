@@ -217,14 +217,14 @@
       </p>
 
       <img
-        src="https://img.magnific.com/vetores-gratis/ilustracao-plana-de-iemanja_52683-155442.jpg?semt=ais_hybrid&w=740&q=80"
-        alt="Ilustração de Iemanjá"
+        src="Logo Umbanda.png"
+        alt="Logo Templo de Iemanjá"
         class="logo"
       />
 
       <h1 class="title">Admin - Quiz de Umbanda</h1>
       <p class="subtitle">
-        Área restrita para edição das perguntas e configurações do quiz.
+        Área restrita para edição das perguntas, configurações e ranking.
       </p>
       <div style="margin-top: 10px;">
         <button
@@ -258,7 +258,8 @@
         <h1>Painel do Quiz de Umbanda</h1>
         <p class="muted">
           Aqui você configura o <strong>tempo e a prova oficial</strong>, gerencia as
-          <strong>perguntas</strong> e visualiza o <strong>ranking</strong> dos alunos.
+          <strong>perguntas</strong>, o <strong>ranking</strong> e agora também os
+          <strong>temas</strong>.
         </p>
       </div>
 
@@ -266,8 +267,8 @@
       <div class="card">
         <h3>1. Configurações gerais</h3>
         <p class="muted">
-          Cronômetro e prova oficial valem para todos que acessarem o link. Use com cuidado
-          só nos momentos em que quiser aplicar prova.
+          Cronômetro e Prova oficial valem para todos que acessarem o link. Use só
+          quando quiser aplicar uma avaliação.
         </p>
         <div class="input-row">
           <div class="field small-field">
@@ -359,33 +360,8 @@
             </div>
             <div class="field">
               <label for="field-tema">Tema (opcional)</label>
-              <select id="field-tema">
-                <option value="">(Sem tema)</option>
-                <option value="Fundamentos">Fundamentos</option>
-                <option value="História">História</option>
-                <option value="Sete Linhas e Orixás">Sete Linhas e Orixás</option>
-                <option value="Oxalá">Oxalá</option>
-                <option value="Ogum">Ogum</option>
-                <option value="Oxóssi">Oxóssi</option>
-                <option value="Xangô">Xangô</option>
-                <option value="Iemanjá">Iemanjá</option>
-                <option value="Oxum">Oxum</option>
-                <option value="Iansã">Iansã</option>
-                <option value="Nanã e Obaluaiê">Nanã e Obaluaiê</option>
-                <option value="Exu e Pomba Gira">Exu e Pomba Gira</option>
-                <option value="Caboclos e Boiadeiros">Caboclos e Boiadeiros</option>
-                <option value="Pretos Velhos">Pretos Velhos</option>
-                <option value="Erês (Crianças)">Erês (Crianças)</option>
-                <option value="Ciganos">Ciganos</option>
-                <option value="Baianos e Marinheiros">Baianos e Marinheiros</option>
-                <option value="Rituais e Pontos Cantados">Rituais e Pontos Cantados</option>
-                <option value="Atabaques e Engoma">Atabaques e Engoma</option>
-                <option value="Terreiro e Hierarquia">Terreiro e Hierarquia</option>
-                <option value="Mediunidade e Ética">Mediunidade e Ética</option>
-                <option value="Outras Religiões Afro-Brasileiras">Outras Religiões Afro-Brasileiras</option>
-                <option value="Orixás e Elementais">Orixás e Elementais</option>
-                <option value="Revisão Geral">Revisão Geral</option>
-              </select>
+              <!-- opções vêm da coleção "temas" -->
+              <select id="field-tema"></select>
             </div>
           </div>
 
@@ -471,6 +447,47 @@
           Ainda não há nenhuma prova registrada.
         </p>
       </div>
+
+      <!-- 5. GERENCIAR TEMAS -->
+      <div class="card">
+        <h3>5. Gerenciar temas</h3>
+        <p class="muted">
+          Os temas abaixo alimentam a lista suspensa em “Tema (opcional)” e o filtro do quiz.
+          Desativar um tema impede uso novo, mas não apaga das perguntas existentes.
+        </p>
+
+        <div class="input-row">
+          <div class="field">
+            <label for="novo-tema">Novo tema</label>
+            <input
+              type="text"
+              id="novo-tema"
+              placeholder="Ex: Simulado Geral, Módulo 1, etc."
+            />
+          </div>
+          <div class="field small-field" style="align-self:flex-end;">
+            <button type="button" id="btn-adicionar-tema" class="btn btn-primary">
+              Adicionar tema
+            </button>
+          </div>
+        </div>
+        <div id="tema-message" class="error-message" style="display:none;"></div>
+        <div id="tema-success" class="success-message" style="display:none;"></div>
+
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Tema</th>
+              <th>Ativo?</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="temas-body"></tbody>
+        </table>
+        <p id="temas-vazio" class="muted" style="margin-top:8px; display:none;">
+          Ainda não há temas cadastrados. Você pode criar um novo acima.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -544,8 +561,17 @@
     const btnRecarregarRanking = document.getElementById("btn-recarregar-ranking");
     const btnLimparRanking = document.getElementById("btn-limpar-ranking");
 
+    // TEMAS
+    const temasBody = document.getElementById("temas-body");
+    const temasVazio = document.getElementById("temas-vazio");
+    const temaMessage = document.getElementById("tema-message");
+    const temaSuccess = document.getElementById("tema-success");
+    const novoTemaInput = document.getElementById("novo-tema");
+    const btnAdicionarTema = document.getElementById("btn-adicionar-tema");
+
     let perguntasCache = [];
     let editandoId = null;
+    let temasCache = [];
 
     function mostrarErroLogin(msg) {
       loginError.textContent = msg;
@@ -571,7 +597,9 @@
       loginSection.style.display = "none";
       adminSection.style.display = "block";
       carregarConfiguracao();
-      carregarPerguntas();
+      carregarTemas().then(() => {
+        carregarPerguntas();
+      });
       carregarRanking();
     }
 
@@ -655,7 +683,194 @@
 
     btnSalvarConfig.addEventListener("click", salvarConfiguracao);
 
-    // PERGUNTAS
+    // TEMAS
+    function atualizarSelectTemas() {
+      // Limpa e recria o select de temas
+      fieldTema.innerHTML = "";
+      const optVazio = document.createElement("option");
+      optVazio.value = "";
+      optVazio.textContent = "(Sem tema)";
+      fieldTema.appendChild(optVazio);
+
+      const ativos = temasCache.filter((t) => t.ativo);
+      ativos.sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
+
+      ativos.forEach((t) => {
+        const opt = document.createElement("option");
+        opt.value = t.nome;
+        opt.textContent = t.nome;
+        fieldTema.appendChild(opt);
+      });
+    }
+
+    function renderTemasTabela() {
+      temasBody.innerHTML = "";
+      if (temasCache.length === 0) {
+        temasVazio.style.display = "block";
+        return;
+      }
+      temasVazio.style.display = "none";
+
+      const ordenados = [...temasCache].sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
+
+      ordenados.forEach((t) => {
+        const tr = document.createElement("tr");
+
+        const tdNome = document.createElement("td");
+        tdNome.textContent = t.nome;
+        tr.appendChild(tdNome);
+
+        const tdAtivo = document.createElement("td");
+        tdAtivo.textContent = t.ativo === false ? "Não" : "Sim";
+        tr.appendChild(tdAtivo);
+
+        const tdAcoes = document.createElement("td");
+
+        const btnToggle = document.createElement("button");
+        btnToggle.className = "btn btn-secondary";
+        btnToggle.style.padding = "4px 10px";
+        btnToggle.textContent = t.ativo === false ? "Ativar" : "Desativar";
+        btnToggle.addEventListener("click", () => toggleTemaAtivo(t.id, !t.ativo));
+
+        const btnRemover = document.createElement("button");
+        btnRemover.className = "btn btn-danger";
+        btnRemover.style.padding = "4px 10px";
+        btnRemover.textContent = "Remover";
+        btnRemover.addEventListener("click", () => removerTema(t));
+
+        tdAcoes.appendChild(btnToggle);
+        tdAcoes.appendChild(btnRemover);
+        tr.appendChild(tdAcoes);
+
+        temasBody.appendChild(tr);
+      });
+    }
+
+    async function carregarTemas() {
+      temaMessage.style.display = "none";
+      temaSuccess.style.display = "none";
+      temasBody.innerHTML = "";
+      temasVazio.style.display = "none";
+
+      try {
+        const snap = await getDocs(collection(db, "temas"));
+        temasCache = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() || {}),
+        }));
+      } catch (e) {
+        console.error(e);
+        temasCache = [];
+        temaMessage.textContent = "Erro ao carregar temas.";
+        temaMessage.style.display = "block";
+      }
+
+      atualizarSelectTemas();
+      renderTemasTabela();
+    }
+
+    async function adicionarTema() {
+      temaMessage.style.display = "none";
+      temaSuccess.style.display = "none";
+
+      const nome = (novoTemaInput.value || "").trim();
+      if (!nome) {
+        temaMessage.textContent = "Digite um nome para o tema.";
+        temaMessage.style.display = "block";
+        return;
+      }
+
+      const existe = temasCache.find(
+        (t) => t.nome.toLowerCase() === nome.toLowerCase()
+      );
+      try {
+        if (existe) {
+          // Se já existir e estiver inativo, apenas reativa
+          if (existe.ativo === false) {
+            await updateDoc(doc(db, "temas", existe.id), { ativo: true });
+            temaSuccess.textContent = "Tema reativado com sucesso.";
+            temaSuccess.style.display = "block";
+          } else {
+            temaMessage.textContent = "Já existe um tema com esse nome.";
+            temaMessage.style.display = "block";
+          }
+        } else {
+          await addDoc(collection(db, "temas"), {
+            nome,
+            ativo: true,
+          });
+          temaSuccess.textContent = "Tema criado com sucesso.";
+          temaSuccess.style.display = "block";
+        }
+        novoTemaInput.value = "";
+        await carregarTemas();
+      } catch (e) {
+        console.error(e);
+        temaMessage.textContent = "Erro ao salvar tema.";
+        temaMessage.style.display = "block";
+      }
+    }
+
+    async function toggleTemaAtivo(id, ativo) {
+      temaMessage.style.display = "none";
+      temaSuccess.style.display = "none";
+      try {
+        await updateDoc(doc(db, "temas", id), { ativo });
+        temaSuccess.textContent = ativo
+          ? "Tema ativado."
+          : "Tema desativado (perguntas antigas continuam com esse tema).";
+        temaSuccess.style.display = "block";
+        await carregarTemas();
+      } catch (e) {
+        console.error(e);
+        temaMessage.textContent = "Erro ao atualizar tema.";
+        temaMessage.style.display = "block";
+      }
+    }
+
+    async function removerTema(tema) {
+      const confirma = confirm(
+        `Tem certeza que deseja remover o tema "${tema.nome}"?\n\nSe ainda houver perguntas usando esse tema, ele não será removido.`
+      );
+      if (!confirma) return;
+
+      temaMessage.style.display = "none";
+      temaSuccess.style.display = "none";
+
+      try {
+        // Verifica se existem perguntas usando esse tema
+        const snapPerg = await getDocs(collection(db, "perguntas"));
+        const usadas = snapPerg.docs.filter((d) => {
+          const data = d.data() || {};
+          return (data.tema || "").toLowerCase() === tema.nome.toLowerCase();
+        });
+
+        if (usadas.length > 0) {
+          temaMessage.textContent =
+            `Não é possível remover: este tema ainda é usado em ${usadas.length} pergunta(s). ` +
+            `Altere o tema dessas perguntas antes de remover.`;
+          temaMessage.style.display = "block";
+          return;
+        }
+
+        await deleteDoc(doc(db, "temas", tema.id));
+        temaSuccess.textContent = "Tema removido com sucesso.";
+        temaSuccess.style.display = "block";
+        await carregarTemas();
+      } catch (e) {
+        console.error(e);
+        temaMessage.textContent = "Erro ao remover tema.";
+        temaMessage.style.display = "block";
+      }
+    }
+
+    btnAdicionarTema.addEventListener("click", adicionarTema);
+
+    // FUNÇÕES AUXILIARES
     function limparFormulario() {
       editandoId = null;
       fieldNumero.value = "";
@@ -673,6 +888,7 @@
 
     btnNova.addEventListener("click", limparFormulario);
 
+    // PERGUNTAS
     async function carregarPerguntas() {
       tableBody.innerHTML = "<tr><td colspan='7'>Carregando...</td></tr>";
       listaVazia.style.display = "none";
@@ -765,7 +981,28 @@
       fieldC.value = p.c || "";
       fieldD.value = p.d || "";
       fieldCorreta.value = (p.correta || "a").toLowerCase();
-      fieldTema.value = p.tema || "";
+
+      // Garante que o tema antigo aparece, mesmo se estiver desativado ou removido da lista
+      const temaPergunta = p.tema || "";
+      if (temaPergunta) {
+        let existe = false;
+        for (let i = 0; i < fieldTema.options.length; i++) {
+          if (fieldTema.options[i].value.toLowerCase() === temaPergunta.toLowerCase()) {
+            existe = true;
+            break;
+          }
+        }
+        if (!existe) {
+          const opt = document.createElement("option");
+          opt.value = temaPergunta;
+          opt.textContent = temaPergunta + " (inativo)";
+          fieldTema.appendChild(opt);
+        }
+        fieldTema.value = temaPergunta;
+      } else {
+        fieldTema.value = "";
+      }
+
       fieldAtivo.checked = p.ativo !== false;
       formMessage.style.display = "none";
       formSuccess.style.display = "none";
