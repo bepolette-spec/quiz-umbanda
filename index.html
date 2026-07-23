@@ -140,6 +140,37 @@
       color: var(--error);
       font-weight: 600;
     }
+    .prova-info {
+      margin-bottom: 10px;
+      padding: 10px 10px;
+      border-radius: 8px;
+      background: #f9fbe7;
+      border: 1px solid #e0e0e0;
+      font-size: 0.85rem;
+    }
+    .prova-info strong {
+      color: var(--primary);
+    }
+    .prova-input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .prova-input-row label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .prova-input-row input[type="text"] {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #d0d7de;
+      font-size: 0.85rem;
+      flex: 1;
+      min-width: 140px;
+    }
     .question {
       padding: 14px 12px 16px;
       border-radius: 10px;
@@ -294,6 +325,10 @@
       .mode-toggle, .filter-bar {
         width: 100%;
       }
+      .prova-input-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
@@ -339,18 +374,27 @@
           <button
             type="button"
             class="btn btn-secondary btn-mode active"
-            data-mode="prova"
-            id="btn-mode-prova"
+            data-mode="estudo"
+            id="btn-mode-estudo"
           >
-            Prova
+            Estudo (resposta na hora)
           </button>
           <button
             type="button"
             class="btn btn-secondary btn-mode"
-            data-mode="estudo"
-            id="btn-mode-estudo"
+            data-mode="treino"
+            id="btn-mode-treino"
           >
-            Estudo
+            Treino (resultado no final)
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary btn-mode"
+            data-mode="prova"
+            id="btn-mode-prova"
+            style="display:none;"
+          >
+            Prova oficial
           </button>
         </div>
 
@@ -366,6 +410,20 @@
         </div>
       </div>
 
+      <div id="prova-info" class="prova-info" style="display:none;">
+        <div>
+          <strong>Prova oficial:</strong>
+          <span id="prova-nome">Prova do Quiz</span>
+        </div>
+        <div class="prova-input-row">
+          <label for="nome-aluno">Nome do aluno:</label>
+          <input type="text" id="nome-aluno" placeholder="Digite seu nome completo" />
+        </div>
+        <p class="muted" style="margin-top:6px; font-size:0.78rem;">
+          Atenção: suas respostas serão registradas com este nome para o ranking desta prova.
+        </p>
+      </div>
+
       <form id="quiz-form"></form>
 
       <div class="controls">
@@ -375,7 +433,7 @@
             Limpar respostas
           </button>
           <button type="button" class="btn btn-primary" id="submit-btn">
-            Finalizar quiz
+            Finalizar
           </button>
           <button
             type="button"
@@ -398,7 +456,7 @@
 
     <footer>
       Quiz em HTML, CSS, JavaScript e Firebase — baseado na apostila do Curso
-      de Umbanda do Templo de Iemanjá.
+      de Umbanda do Templo de Iemanjá, ministrado por Mãe Rafaela.
       <div style="margin-top: 10px;">
         <button
           type="button"
@@ -419,6 +477,7 @@
       getDocs,
       doc,
       getDoc,
+      addDoc,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -435,13 +494,17 @@
 
     let allQuestions = [];
     let questions = [];
-    let currentMode = "prova";
+    let currentMode = "estudo"; // estudo, treino, prova
     let currentTema = "ativas";
 
     let usarTempo = false;
     let tempoSegundosConfig = 0;
     let tempoRestante = 0;
     let timerInterval = null;
+
+    let habilitarProva = false;
+    let nomeProvaConfig = "";
+    let inicioProvaTimestamp = null; // Date.now() quando começa a prova oficial
 
     const quizForm = document.getElementById("quiz-form");
     const progressText = document.getElementById("progress-text");
@@ -453,9 +516,14 @@
     const timerContainer = document.getElementById("timer-container");
     const timerDisplay = document.getElementById("timer-display");
 
-    const btnModeProva = document.getElementById("btn-mode-prova");
     const btnModeEstudo = document.getElementById("btn-mode-estudo");
+    const btnModeTreino = document.getElementById("btn-mode-treino");
+    const btnModeProva = document.getElementById("btn-mode-prova");
     const temaSelect = document.getElementById("tema-select");
+
+    const provaInfo = document.getElementById("prova-info");
+    const provaNomeSpan = document.getElementById("prova-nome");
+    const nomeAlunoInput = document.getElementById("nome-aluno");
 
     function shuffleArray(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -509,18 +577,15 @@
     }
 
     function bloquearQuizPorTempo() {
-      // Bloqueia todos os radios
       const inputs = quizForm.querySelectorAll("input[type='radio']");
       inputs.forEach((inp) => {
         inp.disabled = true;
       });
 
-      // Desabilita botões principais para não mudar respostas
       resetBtn.disabled = true;
       submitBtn.disabled = true;
 
-      // Corrige automaticamente com o que já foi marcado
-      handleSubmit(true); // passando flag de "tempo esgotado"
+      handleSubmit(true);
 
       errorMessageDiv.style.display = "block";
       errorMessageDiv.textContent =
@@ -529,18 +594,30 @@
 
     async function loadConfigAndQuestions() {
       try {
-        // 1) Lê configuração de tempo
         const configSnap = await getDoc(doc(db, "config", "geral"));
         if (configSnap.exists()) {
           const data = configSnap.data();
           usarTempo = !!data.usarTempo;
           tempoSegundosConfig = Number(data.tempoSegundos || 0);
+          habilitarProva = !!data.habilitarProva;
+          nomeProvaConfig = data.nomeProva || "";
         } else {
           usarTempo = false;
           tempoSegundosConfig = 0;
+          habilitarProva = false;
+          nomeProvaConfig = "";
         }
 
-        // 2) Lê perguntas
+        if (habilitarProva) {
+          btnModeProva.style.display = "inline-flex";
+          provaNomeSpan.textContent = nomeProvaConfig || "Prova oficial";
+        } else {
+          btnModeProva.style.display = "none";
+          if (currentMode === "prova") {
+            setMode("estudo");
+          }
+        }
+
         progressText.textContent = "Carregando perguntas...";
         const snapshot = await getDocs(collection(db, "perguntas"));
 
@@ -639,6 +716,13 @@
       shuffleArray(questions);
 
       renderQuestions();
+
+      if (currentMode === "prova") {
+        inicioProvaTimestamp = Date.now();
+      } else {
+        inicioProvaTimestamp = null;
+      }
+
       startTimerIfNeeded();
     }
 
@@ -762,8 +846,27 @@
       });
     }
 
+    async function salvarResultadoProva(stats) {
+      try {
+        await addDoc(collection(db, "provas"), stats);
+      } catch (e) {
+        console.error("Erro ao salvar resultado da prova:", e);
+      }
+    }
+
     function handleSubmit(fromTimer = false) {
       if (questions.length === 0) return;
+
+      // Para prova oficial, exigir nome (quando não for estouro de tempo)
+      if (currentMode === "prova" && !fromTimer) {
+        const nome = nomeAlunoInput.value.trim();
+        if (!nome) {
+          errorMessageDiv.style.display = "block";
+          errorMessageDiv.textContent =
+            "Digite seu nome antes de finalizar a prova oficial.";
+          return;
+        }
+      }
 
       const total = questions.length;
       let correctCount = 0;
@@ -801,7 +904,7 @@
         }
       });
 
-      if (!fromTimer) {
+      if (!fromTimer && currentMode !== "prova") {
         if (unanswered > 0) {
           errorMessageDiv.style.display = "block";
           errorMessageDiv.textContent =
@@ -843,6 +946,34 @@
 
       retryBtn.style.display = "inline-flex";
       updateProgress();
+
+      // Se for prova oficial, grava no ranking
+      if (currentMode === "prova") {
+        let tempoUsado = 0;
+        if (usarTempo && tempoSegundosConfig > 0) {
+          tempoUsado = tempoSegundosConfig - tempoRestante;
+          if (tempoUsado <= 0) tempoUsado = tempoSegundosConfig;
+        } else if (inicioProvaTimestamp) {
+          tempoUsado = Math.round((Date.now() - inicioProvaTimestamp) / 1000);
+        }
+
+        const nomeAluno = nomeAlunoInput.value.trim() || "Sem nome";
+        const temaRegistro = currentTema === "ativas" ? "Ativas" : currentTema;
+
+        const stats = {
+          nome: nomeAluno,
+          nomeProva: nomeProvaConfig || "Prova oficial",
+          tema: temaRegistro,
+          totalQuestoes: total,
+          acertos: correctCount,
+          erros: wrongCount,
+          pontuacao: percent,
+          tempoSegundos: tempoUsado,
+          finalizadoEm: new Date().toISOString(),
+        };
+
+        salvarResultadoProva(stats);
+      }
     }
 
     function handleReset() {
@@ -879,19 +1010,35 @@
 
     function setMode(mode) {
       currentMode = mode;
-      if (mode === "prova") {
-        btnModeProva.classList.add("active");
-        btnModeEstudo.classList.remove("active");
-        clearHighlighting();
-      } else {
+      btnModeEstudo.classList.remove("active");
+      btnModeTreino.classList.remove("active");
+      btnModeProva.classList.remove("active");
+
+      if (mode === "estudo") {
         btnModeEstudo.classList.add("active");
-        btnModeProva.classList.remove("active");
-        clearHighlighting();
+        provaInfo.style.display = "none";
+      } else if (mode === "treino") {
+        btnModeTreino.classList.add("active");
+        provaInfo.style.display = "none";
+      } else if (mode === "prova") {
+        btnModeProva.classList.add("active");
+        if (habilitarProva) {
+          provaInfo.style.display = "block";
+        } else {
+          provaInfo.style.display = "none";
+        }
       }
+      clearHighlighting();
+      clearResult();
+      prepareQuestionsForCurrentTema();
     }
 
-    btnModeProva.addEventListener("click", () => setMode("prova"));
     btnModeEstudo.addEventListener("click", () => setMode("estudo"));
+    btnModeTreino.addEventListener("click", () => setMode("treino"));
+    btnModeProva.addEventListener("click", () => {
+      if (!habilitarProva) return;
+      setMode("prova");
+    });
 
     temaSelect.addEventListener("change", () => {
       currentTema = temaSelect.value;
@@ -899,7 +1046,7 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    setMode("prova");
+    setMode("estudo");
     loadConfigAndQuestions();
   </script>
 </body>
