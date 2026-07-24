@@ -94,6 +94,20 @@
         0 0 0 1px rgba(0, 0, 0, 0.02);
       backdrop-filter: blur(4px);
     }
+
+    .help-box {
+      margin-bottom: 12px;
+      padding: 10px 10px;
+      border-radius: 8px;
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .help-box strong {
+      color: var(--primary);
+    }
+
     .top-bar {
       display: flex;
       flex-wrap: wrap;
@@ -144,6 +158,12 @@
       font-size: 0.8rem;
       color: var(--error);
       font-weight: 600;
+      position: sticky;
+      top: 0;
+      background: #fffbe6;
+      padding: 4px 8px;
+      border-radius: 999px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .prova-info {
       margin-bottom: 10px;
@@ -397,7 +417,6 @@
         FUNDADO EM 2025
       </p>
 
-      <!-- Usa a sua Logo Umbanda local -->
       <img
         src="Logo Umbanda.png"
         alt="Logo Templo de Iemanjá"
@@ -416,6 +435,14 @@
     </header>
 
     <section class="quiz-card">
+      <!-- Guia rápido de uso -->
+      <div class="help-box">
+        <strong>Como usar:</strong><br />
+        • <strong>Estudo</strong> – mostra certo/errado na hora, não grava nada.<br />
+        • <strong>Treino</strong> – corrige só no final, não grava nada.<br />
+        • <strong>Prova oficial</strong> – pede nome, usa o tempo configurado e grava no ranking.
+      </div>
+
       <div class="top-bar">
         <div class="mode-toggle">
           <span class="mode-toggle-label">Modo:</span>
@@ -463,13 +490,22 @@
           <strong>Prova oficial:</strong>
           <span id="prova-nome">Prova do Quiz</span>
         </div>
+        <p class="muted" style="margin-top:4px; font-size:0.8rem;">
+          Você deve fazer esta prova apenas uma vez com o seu nome. Suas respostas
+          ficarão registradas no ranking desta prova.
+        </p>
         <div class="prova-input-row">
           <label for="nome-aluno">Nome do aluno:</label>
           <input type="text" id="nome-aluno" placeholder="Digite seu nome completo" />
         </div>
-        <p class="muted" style="margin-top:6px; font-size:0.78rem;">
-          Atenção: suas respostas serão registradas com este nome para o ranking desta prova.
-        </p>
+        <div class="prova-input-row" style="margin-top:6px;">
+          <button type="button" class="btn btn-primary" id="btn-iniciar-prova">
+            Iniciar prova
+          </button>
+          <span class="muted" style="font-size:0.78rem;">
+            As perguntas só serão liberadas e o tempo só começará após clicar em "Iniciar prova".
+          </span>
+        </div>
       </div>
 
       <form id="quiz-form"></form>
@@ -504,14 +540,21 @@
 
     <footer>
       Quiz em HTML, CSS, JavaScript e Firebase — baseado na apostila do Curso
-      de Umbanda do Templo de Iemanjá, ministrado por Mãe Rafaela.
-      <div style="margin-top: 10px;">
+      de Umbanda do Templo de Iemanjá, Ministrado por Mãe Rafaela.
+      <div style="margin-top: 10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
         <button
           type="button"
           class="btn btn-secondary"
           onclick="window.location.href='admin.html'"
         >
           Área do administrador
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="requestInstall()"
+        >
+          Criar atalho
         </button>
       </div>
     </footer>
@@ -526,7 +569,8 @@
         celular, tablet ou computador para acessar mais rápido nas próximas aulas.
       </p>
       <p class="install-text" style="font-size:0.8rem;">
-        Isso é opcional e depende do seu navegador. Você pode instalar agora ou continuar usando só pelo link.
+        Se o aviso não aparecer no futuro, use a opção "Adicionar à tela inicial"
+        do seu navegador.
       </p>
       <div class="install-actions">
         <button type="button" class="btn btn-secondary" onclick="handleInstall('no')">
@@ -562,7 +606,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Registra service worker (necessário para PWA)
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js").catch((err) => {
         console.error("Falha ao registrar service worker:", err);
@@ -582,6 +625,7 @@
     let habilitarProva = false;
     let nomeProvaConfig = "";
     let inicioProvaTimestamp = null;
+    let provaIniciada = false;
 
     const quizForm = document.getElementById("quiz-form");
     const progressText = document.getElementById("progress-text");
@@ -601,6 +645,7 @@
     const provaInfo = document.getElementById("prova-info");
     const provaNomeSpan = document.getElementById("prova-nome");
     const nomeAlunoInput = document.getElementById("nome-aluno");
+    const btnIniciarProva = document.getElementById("btn-iniciar-prova");
 
     function shuffleArray(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -759,6 +804,29 @@
       currentTema = "ativas";
     }
 
+    function prepararEstadoProvaAntesDeIniciar() {
+      const inputs = quizForm.querySelectorAll("input[type='radio']");
+      inputs.forEach((inp) => {
+        inp.disabled = true;
+      });
+      resetBtn.disabled = true;
+      submitBtn.disabled = false;
+      provaIniciada = false;
+      stopTimer();
+      timerDisplay.textContent = tempoSegundosConfig
+        ? formatTime(tempoSegundosConfig)
+        : "--:--";
+    }
+
+    function prepararEstadoNormal() {
+      const inputs = quizForm.querySelectorAll("input[type='radio']");
+      inputs.forEach((inp) => {
+        inp.disabled = false;
+      });
+      resetBtn.disabled = false;
+      submitBtn.disabled = false;
+    }
+
     function prepareQuestionsForCurrentTema() {
       clearResult();
       stopTimer();
@@ -795,12 +863,13 @@
       renderQuestions();
 
       if (currentMode === "prova") {
-        inicioProvaTimestamp = Date.now();
-      } else {
+        prepararEstadoProvaAntesDeIniciar();
         inicioProvaTimestamp = null;
+      } else {
+        prepararEstadoNormal();
+        inicioProvaTimestamp = null;
+        startTimerIfNeeded();
       }
-
-      startTimerIfNeeded();
     }
 
     function renderQuestions() {
@@ -854,9 +923,6 @@
         quizForm.appendChild(questionWrapper);
       });
 
-      resetBtn.disabled = false;
-      submitBtn.disabled = false;
-
       updateProgress();
       clearResult();
     }
@@ -876,7 +942,7 @@
     }
 
     function clearHighlighting() {
-      const optionLabels = quizForm.querySelectorAll(".option");
+      const optionLabels = quizForm.querySelectorAll("option");
       optionLabels.forEach((label) => {
         label.classList.remove("correct", "incorrect");
       });
@@ -887,8 +953,10 @@
       resultDiv.textContent = "";
       errorMessageDiv.style.display = "none";
       errorMessageDiv.textContent = "";
-      clearHighlighting();
-      // Em todos os modos, o retry fica escondido até finalizar
+      const optionLabels = quizForm.querySelectorAll(".option");
+      optionLabels.forEach((label) => {
+        label.classList.remove("correct", "incorrect");
+      });
       retryBtn.style.display = "none";
     }
 
@@ -935,13 +1003,21 @@
     function handleSubmit(fromTimer = false) {
       if (questions.length === 0) return;
 
-      if (currentMode === "prova" && !fromTimer) {
-        const nome = nomeAlunoInput.value.trim();
-        if (!nome) {
+      if (currentMode === "prova") {
+        if (!provaIniciada) {
           errorMessageDiv.style.display = "block";
           errorMessageDiv.textContent =
-            "Digite seu nome antes de finalizar a prova oficial.";
+            "Clique em \"Iniciar prova\" antes de finalizar.";
           return;
+        }
+        if (!fromTimer) {
+          const nome = nomeAlunoInput.value.trim();
+          if (!nome) {
+            errorMessageDiv.style.display = "block";
+            errorMessageDiv.textContent =
+              "Digite seu nome antes de finalizar a prova oficial.";
+            return;
+          }
         }
       }
 
@@ -949,7 +1025,10 @@
       let correctCount = 0;
       let unanswered = 0;
 
-      clearHighlighting();
+      const optionLabelsAll = quizForm.querySelectorAll(".option");
+      optionLabelsAll.forEach((label) => {
+        label.classList.remove("correct", "incorrect");
+      });
 
       questions.forEach((q, qIndex) => {
         const selected = quizForm.querySelector(
@@ -1021,7 +1100,6 @@
         "<br><br>" +
         mensagemFinal;
 
-      // Em Estudo/Treino pode tentar novamente; em Prova não
       if (currentMode === "estudo" || currentMode === "treino") {
         retryBtn.style.display = "inline-flex";
       } else {
@@ -1070,9 +1148,7 @@
     }
 
     function handleRetry() {
-      if (currentMode === "prova") {
-        return;
-      }
+      if (currentMode === "prova") return;
       clearResult();
       prepareQuestionsForCurrentTema();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1086,7 +1162,10 @@
           const qIndex = Number(target.name.replace("q", ""));
           highlightQuestionInstant(qIndex);
         } else {
-          clearHighlighting();
+          const optionLabels = quizForm.querySelectorAll(".option");
+          optionLabels.forEach((label) => {
+            label.classList.remove("correct", "incorrect");
+          });
         }
       }
     });
@@ -1094,6 +1173,23 @@
     submitBtn.addEventListener("click", () => handleSubmit(false));
     resetBtn.addEventListener("click", handleReset);
     retryBtn.addEventListener("click", handleRetry);
+
+    btnIniciarProva.addEventListener("click", () => {
+      if (!habilitarProva) return;
+      const nome = nomeAlunoInput.value.trim();
+      if (!nome) {
+        errorMessageDiv.style.display = "block";
+        errorMessageDiv.textContent =
+          "Digite seu nome antes de iniciar a prova oficial.";
+        return;
+      }
+      provaIniciada = true;
+      inicioProvaTimestamp = Date.now();
+      prepararEstadoNormal();
+      startTimerIfNeeded();
+      errorMessageDiv.style.display = "none";
+      errorMessageDiv.textContent = "";
+    });
 
     function setMode(mode) {
       currentMode = mode;
@@ -1120,7 +1216,11 @@
         retryBtn.style.display = "none";
       }
 
-      clearHighlighting();
+      const optionLabels = quizForm.querySelectorAll(".option");
+      optionLabels.forEach((label) => {
+        label.classList.remove("correct", "incorrect");
+      });
+
       clearResult();
       prepareQuestionsForCurrentTema();
     }
@@ -1148,13 +1248,12 @@
     let installPopupShown = false;
 
     const isStandalone =
-      window.matchMedia && window.matchMedia("(display-mode: standalone)").matches ||
+      (window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
       window.navigator.standalone === true;
 
     window.addEventListener("beforeinstallprompt", (e) => {
-      if (isStandalone) {
-        return; // já está instalado, não precisa pedir atalho
-      }
+      if (isStandalone) return;
 
       e.preventDefault();
       deferredPrompt = e;
@@ -1172,12 +1271,33 @@
         deferredPrompt.prompt();
         try {
           await deferredPrompt.userChoice;
-        } catch (e) {
-          // ignora erro
-        }
+        } catch (e) {}
         deferredPrompt = null;
       }
       if (popup) popup.style.display = "none";
+    }
+
+    async function requestInstall() {
+      if (deferredPrompt) {
+        try {
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+        } catch (e) {}
+        deferredPrompt = null;
+        return;
+      }
+
+      // Instruções de fallback para quando o navegador não oferece o prompt
+      alert(
+        "Se o botão de instalar não aparecer automaticamente, siga estes passos:\n\n" +
+        "No Android (Chrome):\n" +
+        "1) Toque nos três pontinhos no canto superior direito do navegador.\n" +
+        "2) Procure por 'Adicionar à tela inicial' ou 'Instalar app'.\n" +
+        "3) Toque nessa opção e confirme em 'Adicionar'.\n\n" +
+        "No computador (Chrome/Edge):\n" +
+        "1) Clique no ícone de 'Instalar' na barra de endereço (um quadrado com seta).\n" +
+        "2) Confirme em 'Instalar'."
+      );
     }
   </script>
 </body>
