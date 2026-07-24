@@ -154,7 +154,7 @@
       border: 1px solid #d0d7de;
       background: #fff;
     }
-        .timer {
+    .timer {
       font-size: 0.8rem;
       color: var(--error);
       font-weight: 600;
@@ -328,7 +328,6 @@
       color: var(--muted);
     }
 
-    /* Pop-up de instalação PWA */
     .install-overlay {
       position: fixed;
       inset: 0;
@@ -436,8 +435,12 @@
       </div>
     </header>
 
+    <!-- Cronômetro FIXO fora do cartão -->
+    <div class="timer" id="timer-container" style="display:none;">
+      Tempo restante: <span id="timer-display">--:--</span>
+    </div>
+
     <section class="quiz-card">
-      <!-- Guia rápido de uso -->
       <div class="help-box">
         <strong>Como usar:</strong><br />
         • <strong>Estudo</strong> – mostra certo/errado na hora, não grava nada.<br />
@@ -480,10 +483,6 @@
           <select id="tema-select">
             <option value="ativas">Perguntas ativas (padrão)</option>
           </select>
-        </div>
-
-        <div class="timer" id="timer-container" style="display:none;">
-          Tempo restante: <span id="timer-display">--:--</span>
         </div>
       </div>
 
@@ -562,7 +561,6 @@
     </footer>
   </div>
 
-  <!-- Pop-up de instalação do atalho -->
   <div class="install-overlay" id="install-popup">
     <div class="install-box">
       <h3 class="install-title">Adicionar atalho do Quiz?</h3>
@@ -616,7 +614,7 @@
 
     let allQuestions = [];
     let questions = [];
-    let currentMode = "estudo"; // estudo, treino, prova
+    let currentMode = "estudo";
     let currentTema = "ativas";
 
     let usarTempo = false;
@@ -651,7 +649,7 @@
 
     function shuffleArray(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(i * Math.random());
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
     }
@@ -737,9 +735,7 @@
           provaNomeSpan.textContent = nomeProvaConfig || "Prova oficial";
         } else {
           btnModeProva.style.display = "none";
-          if (currentMode === "prova") {
-            setMode("estudo");
-          }
+          if (currentMode === "prova") setMode("estudo");
         }
 
         progressText.textContent = "Carregando perguntas...";
@@ -941,13 +937,6 @@
       });
 
       progressText.textContent = `Respondidas: ${answered}/${total}`;
-    }
-
-    function clearHighlighting() {
-      const optionLabels = quizForm.querySelectorAll("option");
-      optionLabels.forEach((label) => {
-        label.classList.remove("correct", "incorrect");
-      });
     }
 
     function clearResult() {
@@ -1244,7 +1233,6 @@
     loadConfigAndQuestions();
   </script>
 
-  <!-- Script NÃO módulo para lidar com instalação PWA -->
   <script>
     let deferredPrompt = null;
     let installPopupShown = false;
@@ -1256,7 +1244,6 @@
 
     window.addEventListener("beforeinstallprompt", (e) => {
       if (isStandalone) return;
-
       e.preventDefault();
       deferredPrompt = e;
 
@@ -1289,7 +1276,6 @@
         return;
       }
 
-      // Instruções de fallback para quando o navegador não oferece o prompt
       alert(
         "Se o botão de instalar não aparecer automaticamente, siga estes passos:\n\n" +
         "No Android (Chrome):\n" +
